@@ -1,4 +1,4 @@
-/* Copyright (c) 2012-2013, The Linux Foundation. All rights reserved.
+/* Copyright (c) 2012-2014, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -23,6 +23,10 @@
 #include "mdss_mdp.h"
 #include "mdss_panel.h"
 
+#if defined(CONFIG_LGE_MIPI_TOVIS_VIDEO_540P_PANEL) || defined(CONFIG_FB_MSM_MIPI_TIANMA_VIDEO_QHD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_LGIT_LH470WX1_VIDEO_HD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_TOVIS_LM570HN1A_VIDEO_HD_PT_PANEL)
+extern int has_dsv_f;
+int is_dsv_cont_splash_screening_f;
+#endif
 /* wait for at least 2 vsyncs for lowest refresh rate (24hz) */
 #define VSYNC_TIMEOUT_US 100000
 
@@ -433,8 +437,10 @@ static int mdss_mdp_video_wait4comp(struct mdss_mdp_ctl *ctl, void *arg)
 	if (ctx->polling_en) {
 		rc = mdss_mdp_video_pollwait(ctl);
 	} else {
+		mutex_unlock(&ctl->lock);
 		rc = wait_for_completion_timeout(&ctx->vsync_comp,
 				usecs_to_jiffies(VSYNC_TIMEOUT_US));
+		mutex_lock(&ctl->lock);
 		if (rc == 0) {
 			pr_warn("vsync wait timeout %d, fallback to poll mode\n",
 					ctl->num);
@@ -466,7 +472,63 @@ static void mdss_mdp_video_underrun_intr_done(void *arg)
 			ctl->underrun_cnt);
 }
 
-static int mdss_mdp_video_config_fps(struct mdss_mdp_ctl *ctl, int new_fps)
+static int mdss_mdp_video_vfp_fps_update(struct mdss_mdp_ctl *ctl, int new_fps)
+{
+	int curr_fps;
+	u32 add_v_lines = 0;
+	u32 current_vsync_period_f0, new_vsync_period_f0;
+	struct mdss_panel_data *pdata;
+	struct mdss_mdp_video_ctx *ctx;
+	u32 vsync_period, hsync_period;
+
+	ctx = (struct mdss_mdp_video_ctx *) ctl->priv_data;
+	if (!ctx) {
+		pr_err("invalid ctx\n");
+		return -ENODEV;
+	}
+
+	pdata = ctl->panel_data;
+	if (pdata == NULL) {
+		pr_err("%s: Invalid panel data\n", __func__);
+		return -EINVAL;
+	}
+
+	vsync_period = mdss_panel_get_vtotal(&pdata->panel_info);
+	hsync_period = mdss_panel_get_htotal(&pdata->panel_info);
+	curr_fps = mdss_panel_get_framerate(&pdata->panel_info);
+
+	if (curr_fps > new_fps) {
+		add_v_lines = mult_frac(vsync_period,
+				(curr_fps - new_fps), new_fps);
+		pdata->panel_info.lcdc.v_front_porch += add_v_lines;
+	} else {
+		add_v_lines = mult_frac(vsync_period,
+				(new_fps - curr_fps), new_fps);
+		pdata->panel_info.lcdc.v_front_porch -= add_v_lines;
+	}
+
+	vsync_period = mdss_panel_get_vtotal(&pdata->panel_info);
+	current_vsync_period_f0 = mdp_video_read(ctx,
+		MDSS_MDP_REG_INTF_VSYNC_PERIOD_F0);
+	new_vsync_period_f0 = (vsync_period * hsync_period);
+
+	mdp_video_write(ctx, MDSS_MDP_REG_INTF_VSYNC_PERIOD_F0,
+			current_vsync_period_f0 | 0x800000);
+	if (new_vsync_period_f0 & 0x800000) {
+		mdp_video_write(ctx, MDSS_MDP_REG_INTF_VSYNC_PERIOD_F0,
+			new_vsync_period_f0);
+	} else {
+		mdp_video_write(ctx, MDSS_MDP_REG_INTF_VSYNC_PERIOD_F0,
+			new_vsync_period_f0 | 0x800000);
+		mdp_video_write(ctx, MDSS_MDP_REG_INTF_VSYNC_PERIOD_F0,
+			new_vsync_period_f0 & 0x7fffff);
+	}
+
+	return 0;
+}
+
+static int mdss_mdp_video_config_fps(struct mdss_mdp_ctl *ctl,
+					struct mdss_mdp_ctl *sctl, int new_fps)
 {
 	struct mdss_mdp_video_ctx *ctx;
 	struct mdss_panel_data *pdata;
@@ -529,6 +591,40 @@ static int mdss_mdp_video_config_fps(struct mdss_mdp_ctl *ctl, int new_fps)
 			ctl->force_screen_state = MDSS_SCREEN_DEFAULT;
 			mdss_mdp_display_commit(ctl, NULL);
 			mdss_mdp_display_wait4comp(ctl);
+		} else if (pdata->panel_info.dfps_update
+				== DFPS_IMMEDIATE_PORCH_UPDATE_MODE){
+			if (!ctx->timegen_en) {
+				pr_err("TG is OFF. DFPS mode invalid\n");
+				return -EINVAL;
+			}
+
+			video_vsync_irq_enable(ctl, true);
+			INIT_COMPLETION(ctx->vsync_comp);
+			rc = wait_for_completion_timeout(&ctx->vsync_comp,
+				usecs_to_jiffies(VSYNC_TIMEOUT_US));
+			WARN(rc <= 0, "timeout (%d) vsync interrupt on ctl=%d\n",
+				rc, ctl->num);
+			rc = 0;
+			video_vsync_irq_disable(ctl);
+
+			rc = mdss_mdp_video_vfp_fps_update(ctl, new_fps);
+			if (rc < 0) {
+				pr_err("%s: Error during DFPS\n", __func__);
+				return rc;
+			}
+			if (sctl) {
+				rc = mdss_mdp_video_vfp_fps_update(sctl,
+								new_fps);
+				if (rc < 0) {
+					pr_err("%s: DFPS error\n", __func__);
+					return rc;
+				}
+			}
+			rc = mdss_mdp_ctl_intf_event(ctl,
+						MDSS_EVENT_PANEL_UPDATE_FPS,
+						(void *)new_fps);
+			WARN(rc, "intf %d panel fps update error (%d)\n",
+							ctl->intf_num, rc);
 		} else {
 			pr_err("intf %d panel, unknown FPS mode\n",
 							ctl->intf_num);
@@ -620,6 +716,11 @@ int mdss_mdp_video_reconfigure_splash_done(struct mdss_mdp_ctl *ctl,
 	}
 
 	if (!handoff) {
+#if defined(CONFIG_LGE_MIPI_TOVIS_VIDEO_540P_PANEL) || defined(CONFIG_FB_MSM_MIPI_TIANMA_VIDEO_QHD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_LGIT_LH470WX1_VIDEO_HD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_TOVIS_LM570HN1A_VIDEO_HD_PT_PANEL)
+		if (has_dsv_f) {
+			is_dsv_cont_splash_screening_f = 1;
+		}
+#endif
 		ret = mdss_mdp_ctl_intf_event(ctl, MDSS_EVENT_CONT_SPLASH_BEGIN,
 					      NULL);
 		if (ret) {
@@ -636,6 +737,11 @@ int mdss_mdp_video_reconfigure_splash_done(struct mdss_mdp_ctl *ctl,
 
 		ret = mdss_mdp_ctl_intf_event(ctl,
 			MDSS_EVENT_CONT_SPLASH_FINISH, NULL);
+#if defined(CONFIG_LGE_MIPI_TOVIS_VIDEO_540P_PANEL) || defined(CONFIG_FB_MSM_MIPI_TIANMA_VIDEO_QHD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_LGIT_LH470WX1_VIDEO_HD_PT_PANEL) || defined(CONFIG_FB_MSM_MIPI_TOVIS_LM570HN1A_VIDEO_HD_PT_PANEL)
+		if (has_dsv_f) {
+			is_dsv_cont_splash_screening_f = 0;
+		}
+#endif
 	}
 
 error:
@@ -646,7 +752,6 @@ error:
 	free_bootmem_late(mdp5_data->splash_mem_addr,
 				 mdp5_data->splash_mem_size);
 
-	mdss_mdp_clk_ctrl(MDP_BLOCK_POWER_OFF, false);
 	return ret;
 }
 
