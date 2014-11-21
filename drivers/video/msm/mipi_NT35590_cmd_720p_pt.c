@@ -37,8 +37,10 @@ static int mipi_cmd_nt35590_720p_pt_init(void)
 {
 	int ret;
 
+	#ifdef CONFIG_FB_MSM_MIPI_PANEL_DETECT
 	if (msm_fb_detect_client("mipi_cmd_nt35590_720p"))
 		return 0;
+	#endif
 
 	pinfo.xres = 720;
 	pinfo.yres = 1280;
