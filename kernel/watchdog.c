@@ -22,12 +22,15 @@
 #include <linux/notifier.h>
 #include <linux/module.h>
 #include <linux/sysctl.h>
+#include <linux/smp.h>
 
 #include <asm/irq_regs.h>
 #include <linux/perf_event.h>
 
+#include <mach/mmi_watchdog.h>
+
 int watchdog_enabled = 1;
-int __read_mostly watchdog_thresh = 10;
+int __read_mostly watchdog_thresh = 5;
 
 static DEFINE_PER_CPU(unsigned long, watchdog_touch_ts);
 static DEFINE_PER_CPU(struct task_struct *, softlockup_watchdog);

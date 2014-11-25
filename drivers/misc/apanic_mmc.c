@@ -27,7 +27,7 @@
 #include <linux/module.h>
 
 #include <asm/setup.h>
-#include "msm_watchdog.h"
+#include <mach/mmi_watchdog.h>
 
 /* from kernel/printk.c */
 int log_buf_copy(char *dest, int idx, int len);
@@ -599,11 +599,6 @@ void emergency_dump(void)
 	emergency_dump_flag = 0;
 }
 
-static void touch_hw_watchdog(void)
-{
-	pet_watchdog();
-}
-
 static void apanic_mmc_logbuf_dump(void)
 {
 	struct apanic_data *ctx = &drv_ctx;
@@ -803,11 +798,6 @@ static void apanic_mmc_memdump(void)
 	pr_emerg("apanic: full memory dump successfully written\n");
 }
 #endif				/* CONFIG_APANIC_MMC_MEMDUMP */
-
-static void panic_watchdog_set(unsigned int t)
-{
-	msm_panic_wdt_set(t);
-} 
 
 static int apanic_mmc(struct notifier_block *this, unsigned long event,
 		      void *ptr)

@@ -81,6 +81,7 @@
 #include <asm/paravirt.h>
 #endif
 
+#include <mach/mmi_watchdog.h>
 #include "sched.h"
 #include "../workqueue_sched.h"
 
@@ -4431,6 +4432,15 @@ long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 	if (!check_same_owner(p) && !ns_capable(task_user_ns(p), CAP_SYS_NICE))
 		goto out_unlock;
 
+#ifdef CONFIG_HOTPLUG_CPU
+	if (!ns_capable(task_user_ns(p), CAP_SYS_NICE)) {
+		/* Silent fail.  No scenario for affinity makes sense
+		 * for unpriviledged users with hotplugged CPU's.
+		 */
+		retval = 0;
+		goto out_unlock;
+	}
+#endif
 	retval = security_task_setscheduler(p);
 	if (retval)
 		goto out_unlock;
@@ -4907,7 +4917,8 @@ void sched_show_task(struct task_struct *p)
 	show_stack(p, NULL);
 }
 
-void show_state_filter(unsigned long state_filter)
+void show_state_thread_filter(unsigned long state_filter,
+			      unsigned long threads_filter)
 {
 	struct task_struct *g, *p;
 
@@ -4925,23 +4936,31 @@ void show_state_filter(unsigned long state_filter)
 		 * console might take a lot of time:
 		 */
 		touch_nmi_watchdog();
-		if (!state_filter || (p->state & state_filter))
+		touch_hw_watchdog();
+		if ((!state_filter || (p->state & state_filter)) &&
+			(((threads_filter & SHOW_KTHREADS) && (!p->mm))
+			|| ((threads_filter & SHOW_APP_THREADS) && (p->mm))))
 			sched_show_task(p);
 	} while_each_thread(g, p);
 
 	touch_all_softlockup_watchdogs();
 
 #ifdef CONFIG_SYSRQ_SCHED_DEBUG
+	if (threads_filter & SHOW_KTHREADS)
 	sysrq_sched_debug_show();
 #endif
 	rcu_read_unlock();
 	/*
-	 * Only show locks if all tasks are dumped:
+	 * Only show locks if all kernel tasks are dumped:
 	 */
-	if (!state_filter)
+	if ((!state_filter) && (threads_filter & SHOW_KTHREADS))
 		debug_show_all_locks();
 }
 
+void show_state_filter(unsigned long state_filter)
+{
+	show_state_thread_filter(state_filter, SHOW_KTHREADS | SHOW_APP_THREADS);
+}
 void __cpuinit init_idle_bootup_task(struct task_struct *idle)
 {
 	idle->sched_class = &idle_sched_class;
