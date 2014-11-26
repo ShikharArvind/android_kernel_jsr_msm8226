@@ -33,6 +33,10 @@ modules.builtin
 *.patch
 *.gcno
 
+/.settings
+.cproject
+.project
+
 #
 # Top-level generic files
 #
