@@ -7068,38 +7068,43 @@
 			qcom,master-offset = <0xa00>;
 		};
 
-		qcom,camera-led-flash {
-			cell-index = <0x0>;
+		led_flash0: qcom,camera-led-flash {
+			cell-index = <0>;
 			compatible = "qcom,camera-led-flash";
-			qcom,flash-type = <0x1>;
-			qcom,flash-source = <0x61>;
-			qcom,torch-source = <0x62>;
+			qcom,flash-type = <1>;
+			qcom,flash-source = <&pm8226_flash0>;
+			qcom,torch-source = <&pm8226_torch>;
+			
 			linux,phandle = <0xa>;
 			phandle = <0xa>;
 		};
 
-		qcom,flash {
-			cell-index = <0x0>;
+		pm8226_flash0: qcom,flash {
+			cell-index = <0>;
 			compatible = "qcom,leds-gpio-flash";
 			status = "okay";
-			qcom,flash-en = <0x8 0x20 0x0>;
-			qcom,flash-now = <0x8 0x1f 0x0>;
+			qcom,flash-en = <8 32 0>;
+			qcom,flash-now = <8 31 0>;
 			linux,name = "flashlight";
 			linux,default-trigger = "flashlight-trigger";
-			qcom,current = <0xff>;
+			qcom,current = <255>;
+			qcom,max-current = <255>;
+			
 			linux,phandle = <0x61>;
 			phandle = <0x61>;
 		};
 
-		qcom,torch {
-			cell-index = <0x1>;
+		pm8226_torch: qcom,torch {
+			cell-index = <1>;
 			compatible = "qcom,leds-gpio-flash";
 			status = "okay";
-			qcom,flash-en = <0x8 0x20 0x0>;
-			qcom,flash-now = <0x8 0x1f 0x0>;
+			qcom,flash-en = <8 32 0>;
+			qcom,flash-now = <8 31 0>;
 			linux,name = "led:torch";
 			linux,default-trigger = "torch-trigger";
-			qcom,current = <0x7f>;
+			qcom,current = <127>;
+			qcom,max-current = <127>;
+			
 			linux,phandle = <0x62>;
 			phandle = <0x62>;
 		};
