@@ -605,7 +605,7 @@
 			status = "disabled";
 		};
 
-		qcom,gdsc@fd8c2304 {
+		gdsc_mdss: qcom,gdsc@fd8c2304 {
 			compatible = "qcom,gdsc";
 			regulator-name = "gdsc_mdss";
 			reg = <0xfd8c2304 0x4>;
@@ -2702,39 +2702,51 @@
 			};
 		};
 
-		qcom,mdss_mdp@fd900000 {
+		mdss_mdp: qcom,mdss_mdp@fd900000 {
 			compatible = "qcom,mdss_mdp";
-			reg = <0xfd900000 0x22100 0xfd924000 0x1000>;
+			reg = <0xfd900000 0x22100>, <0xfd924000 0x1000>;
 			reg-names = "mdp_phys", "vbif_phys";
-			interrupts = <0x0 0x48 0x0>;
-			vdd-supply = <0x10>;
-			qcom,max-clk-rate = <0xbebc200>;
+			interrupts = <0 72 0>;
+			vdd-supply = <&gdsc_mdss>;
+			
+			qcom,max-clk-rate = <200000000>;
 			qcom,mdss-pipe-vig-off = <0x1200>;
 			qcom,mdss-pipe-rgb-off = <0x1e00>;
 			qcom,mdss-pipe-dma-off = <0x2a00>;
-			qcom,mdss-pipe-vig-fetch-id = <0x1>;
-			qcom,mdss-pipe-rgb-fetch-id = <0x7>;
-			qcom,mdss-pipe-dma-fetch-id = <0x4>;
-			qcom,mdss-smp-data = <0x7 0x1000>;
-			qcom,mdss-ctl-off = <0x600 0x700>;
-			qcom,mdss-mixer-intf-off = <0x3200>;
-			qcom,mdss-mixer-wb-off = <0x3e00>;
-			qcom,mdss-dspp-off = <0x4600>;
-			qcom,mdss-pingpong-off = <0x21b00>;
-			qcom,mdss-wb-off = <0x11100 0x13100>;
-			qcom,mdss-intf-off = <0x0 0x21300>;
-			qcom,mdss-rot-block-size = <0x40>;
-			qcom,mdss-smp-mb-per-pipe = <0x3>;
-			vdd-cx-supply = <0x1d>;
-			qcom,vbif-settings = <0x4 0x1 0xd8 0x707 0x124 0x3>;
-			qcom,mdp-settings = <0x2e0 0xa5 0x2e4 0x55>;
+			qcom,mdss-pipe-vig-fetch-id = <1>;
+			qcom,mdss-pipe-rgb-fetch-id = <7>;
+			qcom,mdss-pipe-dma-fetch-id = <4>;
+			
+			qcom,mdss-smp-data = <7 4096>;
+			
+			qcom,mdss-ctl-off = <0x00000600 0x00000700>;
+			qcom,mdss-mixer-intf-off = <0x00003200>;
+			qcom,mdss-mixer-wb-off = <0x00003E00>;
+			qcom,mdss-dspp-off = <0x00004600>;
+			qcom,mdss-pingpong-off = <0x00021B00>;
+			qcom,mdss-wb-off = <0x00011100 0x00013100>;
+			qcom,mdss-intf-off = <0x00000000 0x00021300>;
+			qcom,mdss-rot-block-size = <64>;
+			qcom,mdss-smp-mb-per-pipe = <3>;
+			vdd-cx-supply = <&pm8226_s1_corner>;
+			
+			qcom,vbif-settings = 
+					<0x004 0x00000001>,
+					<0x0D8 0x00000707>,
+					<0x124 0x00000003>;
+			qcom,mdp-settings = 
+					<0x02E0 0x000000A5>,
+					<0x02E4 0x00000055>;
+			
 			qcom,mdss-pref-prim-intf = "dsi";
+			
 			batfet-supply = <0x1e>;
+			
 			linux,phandle = <0x21>;
 			phandle = <0x21>;
 
-			qcom,mdss_fb_primary {
-				cell-index = <0x0>;
+			mdss_fb0: qcom,mdss_fb_primary {
+				cell-index = <0>;
 				compatible = "qcom,mdss-fb";
 				qcom,memory-reservation-type = "EBI1";
 				qcom,memory-reservation-size = <0x800000>;
@@ -2743,8 +2755,8 @@
 				phandle = <0x20>;
 			};
 
-			qcom,mdss_fb_wfd {
-				cell-index = <0x1>;
+			mdss_fb1: qcom,mdss_fb_wfd {
+				cell-index = <1>;
 				compatible = "qcom,mdss-fb";
 				linux,phandle = <0x26>;
 				phandle = <0x26>;
@@ -4405,20 +4417,20 @@
 		qcom,rpm-smd {
 			compatible = "qcom,rpm-smd";
 			rpm-channel-name = "rpm_requests";
-			rpm-channel-type = <0xf>;
+			rpm-channel-type = <15>;     /* SMD_APPS_RPM */
 
 			rpm-regulator-smpa1 {
 				compatible = "qcom,rpm-regulator-smd-resource";
 				qcom,resource-name = "smpa";
-				qcom,resource-id = <0x1>;
-				qcom,regulator-type = <0x1>;
+				qcom,resource-id = <1>;
+				qcom,regulator-type = <1>;
 				qcom,hpm-min-load = <0x186a0>;
 				status = "okay";
 
-				regulator-s1 {
+				pm8226_s1: regulator-s1 {
 					compatible = "qcom,rpm-regulator-smd";
 					regulator-name = "8226_s1";
-					qcom,set = <0x3>;
+					qcom,set = <3>;
 					status = "okay";
 					regulator-min-microvolt = <0x7a120>;
 					regulator-max-microvolt = <0x137478>;
@@ -4426,34 +4438,34 @@
 					phandle = <0x44>;
 				};
 
-				regulator-s1-corner {
+				pm8226_s1_corner: regulator-s1-corner {
 					compatible = "qcom,rpm-regulator-smd";
 					regulator-name = "8226_s1_corner";
-					qcom,set = <0x3>;
-					regulator-min-microvolt = <0x1>;
-					regulator-max-microvolt = <0x7>;
+					qcom,set = <3>;
+					regulator-min-microvolt = <1>;
+					regulator-max-microvolt = <7>;
 					qcom,use-voltage-corner;
 					qcom,consumer-supplies = "vdd_dig", "";
 					linux,phandle = <0x1d>;
 					phandle = <0x1d>;
 				};
 
-				regulator-s1-corner-ao {
+				pm8226_s1_corner_ao: regulator-s1-corner-ao {
 					compatible = "qcom,rpm-regulator-smd";
 					regulator-name = "8226_s1_corner_ao";
-					qcom,set = <0x1>;
-					regulator-min-microvolt = <0x1>;
-					regulator-max-microvolt = <0x7>;
+					qcom,set = <1>;
+					regulator-min-microvolt = <1>;
+					regulator-max-microvolt = <7>;
 					qcom,use-voltage-corner;
 					qcom,consumer-supplies = "vdd_sr2_dig", "";
 				};
 
-				regulator-s1-floor-corner {
+				pm8226_s1_floor_corner: regulator-s1-floor-corner {
 					compatible = "qcom,rpm-regulator-smd";
 					regulator-name = "8226_s1_floor_corner";
-					qcom,set = <0x3>;
-					regulator-min-microvolt = <0x1>;
-					regulator-max-microvolt = <0x7>;
+					qcom,set = <3>;
+					regulator-min-microvolt = <1>;
+					regulator-max-microvolt = <7>;
 					qcom,use-voltage-floor-corner;
 					qcom,always-send-voltage;
 					linux,phandle = <0x5e>;
