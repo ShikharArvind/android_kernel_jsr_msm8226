@@ -37,6 +37,10 @@
 #ifdef CONFIG_ION_MSM
 #include <mach/ion.h>
 #endif
+#ifdef CONFIG_ANDROID_PERSISTENT_RAM
+#include <linux/persistent_ram.h>
+#endif
+#include <linux/memblock.h>
 #include <mach/msm_memtypes.h>
 #include <mach/socinfo.h>
 #include <mach/board.h>
@@ -63,6 +67,59 @@ static struct memtype_reserve msm8226_reserve_table[] __initdata = {
 		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
 	},
 };
+
+#define JSR_PERSISTENT_RAM_ADDR   0x7F100000
+#define JSR_PERSISTENT_RAM_SIZE   0x00100000
+//#define JSR_PERSISTENT_RAM_SIZE   0x00200000
+#define JSR_RAM_CONSOLE_SIZE     (128 * SZ_1K * 2)
+
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+static struct platform_device ram_console_device = {
+	.name = "ram_console",
+	.id = -1,
+};
+#endif
+
+#ifdef CONFIG_PERSISTENT_TRACER
+static struct platform_device persistent_trace_device = {
+	.name = "persistent_trace",
+	.id = -1,
+};
+#endif
+
+#ifdef CONFIG_ANDROID_PERSISTENT_RAM
+static struct persistent_ram_descriptor pram_descs[] __initdata = {
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+	{
+		.name = "ram_console",
+		.size = JSR_RAM_CONSOLE_SIZE,
+	},
+#endif
+#ifdef CONFIG_PERSISTENT_TRACER
+	{
+		.name = "persistent_trace",
+		.size = JSR_RAM_CONSOLE_SIZE,
+	},
+#endif
+};
+
+static struct persistent_ram persist_ram __initdata = {
+	.descs = pram_descs,
+	.num_descs = ARRAY_SIZE(pram_descs),
+	.start = JSR_PERSISTENT_RAM_ADDR,
+	.size = JSR_PERSISTENT_RAM_SIZE
+};
+
+static void __init add_persist_ram_devices(void)
+{
+	int ret;
+	pr_info("PERSIST RAM CONSOLE START ADDR : 0x%x\n", persist_ram.start);
+	ret = persistent_ram_early_init(&persist_ram);
+	if (ret)
+		pr_err("%s: failed to initialize persistent ram\n", __func__);
+}
+
+#endif
 
 static int msm8226_paddr_to_memtype(unsigned int paddr)
 {
@@ -102,9 +159,22 @@ static void __init msm8226_reserve(void)
 {
 	reserve_info = &msm8226_reserve_info;
 	of_scan_flat_dt(dt_scan_for_memory_reserve, msm8226_reserve_table);
+#ifdef CONFIG_ANDROID_PERSISTENT_RAM
+	add_persist_ram_devices();
+#endif
 	msm_reserve();
 }
 
+void __init add_persistent_device(void)
+{
+#ifdef CONFIG_ANDROID_RAM_CONSOLE
+	platform_device_register(&ram_console_device);
+#endif
+#ifdef CONFIG_PERSISTENT_TRACER
+	platform_device_register(&persistent_trace_device);
+#endif
+}
+ 
 /*
  * Used to satisfy dependencies for devices that need to be
  * run early or in a particular order. Most likely your device doesn't fall
@@ -127,6 +197,7 @@ void __init msm8226_add_drivers(void)
 		msm_clock_init(&msm8226_clock_init_data);
 	tsens_tm_init_driver();
 	msm_thermal_device_init();
+	add_persistent_device();
 }
 
 void __init msm8226_init(void)
