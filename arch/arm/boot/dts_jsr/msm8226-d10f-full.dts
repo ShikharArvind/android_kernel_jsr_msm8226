@@ -6740,51 +6740,80 @@
 			reg-names = "rbcpr", "rbcpr_clk", "efuse_addr";
 			interrupts = <0 15 0>;
 			regulator-name = "apc_corner";
+
 			regulator-min-microvolt = <1>;
-			regulator-max-microvolt = <3>;
-			qcom,pvs-fuse-redun-sel = <0x16 0x18 0x3 0x2 0x0>;
-			qcom,pvs-fuse = <0x16 0x6 0x5 0x0>;
-			qcom,pvs-fuse-redun = <0x16 0x1b 0x5 0x0>;
-			qcom,pvs-init-voltage = <0x144b50 0x144b50 0x144b50 0x142440 0x13fd30 0x13d620 0x13af10 0x138800 0x1360f0 0x1339e0 0x1312d0 0x12ebc0 0x12c4b0 0x129da0 0x127690 0x124f80 0x122870 0x120160 0x11da50 0x11b340 0x118c30 0x116520 0x116520 0x116520 0x116520 0x116520 0x116520 0x116520 0x116520 0x116520 0x116520 0x116520>;
-			qcom,pvs-corner-ceiling-slow = <0x100590 0x118c30 0x138800>;
-			qcom,pvs-corner-ceiling-nom = <0x100590 0x107ac0 0x124f80>;
-			qcom,pvs-corner-ceiling-fast = <0x100590 0x100590 0x10c8e0>;
+			regulator-max-microvolt = <3>;  /* Maximum corner value as max constraint, which should be 4 for SUPER_TURBO or 3 for TURBO */
+
+			qcom,pvs-fuse-redun-sel = <22 24 3 2 0>;
+			qcom,pvs-fuse = <22 6 5 0>;
+			qcom,pvs-fuse-redun = <22 27 5 0>;
+
+			qcom,pvs-init-voltage =
+				<0x144b50 0x144b50 0x144b50 0x142440>,
+				<0x13fd30 0x13d620 0x13af10 0x138800>,
+				<0x1360f0 0x1339e0 0x1312d0 0x12ebc0>,
+				<0x12c4b0 0x129da0 0x127690 0x124f80>,
+				<0x122870 0x120160 0x11da50 0x11b340>,
+				<0x118c30 0x116520 0x116520 0x116520>,
+				<0x116520 0x116520 0x116520 0x116520>,
+				<0x116520 0x116520 0x116520 0x116520>;
+			qcom,pvs-corner-ceiling-slow = <1050000 1150000 1280000>;
+			qcom,pvs-corner-ceiling-nom  = <1050000 1080000 1200000>;
+			qcom,pvs-corner-ceiling-fast = <1050000 1050000 1100000>;
 			vdd-apc-supply = <&pm8226_s2>;
+			
 			vdd-mx-supply = <&pm8226_l3_ao>;
 			qcom,vdd-mx-vmax = <1350000>;
 			qcom,vdd-mx-vmin-method = <1>;
-			qcom,cpr-ref-clk = <0x4b00>;
-			qcom,cpr-timer-delay = <0x1388>;
-			qcom,cpr-timer-cons-up = <0x0>;
-			qcom,cpr-timer-cons-down = <0x2>;
-			qcom,cpr-irq-line = <0x0>;
-			qcom,cpr-step-quotient = <0x1e>;
-			qcom,cpr-up-threshold = <0x0>;
-			qcom,cpr-down-threshold = <0x5>;
-			qcom,cpr-idle-clocks = <0x0>;
-			qcom,cpr-gcnt-time = <0x1>;
+			
+			qcom,cpr-ref-clk = <19200>;
+			qcom,cpr-timer-delay = <5000>;
+			qcom,cpr-timer-cons-up = <0>;
+			qcom,cpr-timer-cons-down = <2>;
+			qcom,cpr-irq-line = <0>;
+			qcom,cpr-step-quotient = <30>;
+			qcom,cpr-up-threshold = <0>;
+			qcom,cpr-down-threshold = <5>;
+			qcom,cpr-idle-clocks = <0>;
+			qcom,cpr-gcnt-time = <1>;
 			qcom,vdd-apc-step-up-limit = <1>;
 			qcom,vdd-apc-step-down-limit = <1>;
-			qcom,cpr-apc-volt-step = <0x2710>;
-			qcom,cpr-fuse-redun-sel = <0x8a 0x39 0x1 0x1 0x0>;
-			qcom,cpr-fuse-row = <0x8a 0x0>;
-			qcom,cpr-fuse-bp-cpr-disable = <0x24>;
-			qcom,cpr-fuse-bp-scheme = <0x25>;
-			qcom,cpr-fuse-target-quot = <0x18 0xc 0x0>;
-			qcom,cpr-fuse-ro-sel = <0x36 0x26 0x29>;
-			qcom,cpr-fuse-redun-row = <0x8b 0x0>;
-			qcom,cpr-fuse-redun-target-quot = <0x18 0xc 0x0>;
-			qcom,cpr-fuse-redun-ro-sel = <0x2e 0x24 0x27>;
-			qcom,cpr-enable;
-			qcom,cpr-fuse-cond-min-volt-sel = <0x36 0x2a 0x6 0x7 0x1>;
-			qcom,cpr-cond-min-voltage = <0x116520>;
-			qcom,cpr-fuse-uplift-sel = <0x16 0x35 0x1 0x0 0x0>;
-			qcom,cpr-uplift-voltage = <0xc350>;
-			qcom,cpr-uplift-quotient = <0x0 0x0 0x78>;
-			qcom,cpr-uplift-max-volt = <0x149970>;
-			qcom,cpr-uplift-speed-bin = <0x1>;
-			qcom,speed-bin-fuse-sel = <0x16 0x0 0x3 0x0>;
-			qcom,cpr-quot-adjust-table = <0x1 0x493e0 0x0 0x1 0x1 0x5dc00 0x0 0x1 0x1 0x927c0 0x0 0x2 0x1 0xc0300 0x0 0x2 0x1 0xf3c00 0x1c2 0x3 0x1 0x10b300 0x177 0x3 0x1 0x122a00 0x12c 0x3 0x1 0x13ec00 0xe1 0x3 0x1 0x148200 0xbb 0x3 0x1 0x156300 0x96 0x3 0x1 0x16da00 0x4b 0x3 0x1 0x185100 0x0 0x3>;
+			qcom,cpr-apc-volt-step = <10000>;
+			
+			qcom,cpr-fuse-redun-sel = <138 57 1 1 0>;
+			qcom,cpr-fuse-row = <138 0>;
+			qcom,cpr-fuse-bp-cpr-disable = <36>;
+			qcom,cpr-fuse-bp-scheme = <37>;
+			qcom,cpr-fuse-target-quot = <24 12 0>;
+			qcom,cpr-fuse-ro-sel = <54 38 41>;
+			qcom,cpr-fuse-redun-row = <139 0>;
+			qcom,cpr-fuse-redun-target-quot = <24 12 0>;
+			qcom,cpr-fuse-redun-ro-sel = <46 36 39>;
+			
+			qcom,cpr-enable;     /* Present: CPR enabled by default. */
+			
+			qcom,cpr-fuse-cond-min-volt-sel = <54 42 6 7 1>;
+			qcom,cpr-cond-min-voltage = <1140000>;
+			qcom,cpr-fuse-uplift-sel = <22 53 1 0 0>;
+			qcom,cpr-uplift-voltage = <50000>;
+			qcom,cpr-uplift-quotient = <0 0 120>;
+			qcom,cpr-uplift-max-volt = <1350000>;
+			qcom,cpr-uplift-speed-bin = <1>;
+			qcom,speed-bin-fuse-sel = <22 0 3 0>;
+			qcom,cpr-quot-adjust-table = 
+				<1 300000 0 1>,
+				<1 384000 0 1>,
+				<1 600000 0 2>,
+				<1 787200 0 2>,
+				<1 998400 450 3>,
+				<1 1094400 375 3>,
+				<1 1190400 300 3>,
+				<1 1305600 225 3>,
+				<1 1344000 187 3>,
+				<1 1401600 150 3>,
+				<1 1497600 75 3>,
+				<1 1593600 0 3>;
+			
 			linux,phandle = <0x57>;
 			phandle = <0x57>;
 		};
