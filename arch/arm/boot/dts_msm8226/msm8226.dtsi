@@ -267,7 +267,7 @@
 		};
 	};
 
-        usb_otg: usb@f9a55000 {
+	usb_otg: usb@f9a55000 {
 		compatible = "qcom,hsusb-otg";
 		reg = <0xf9a55000 0x400>;
 		interrupts = <0 134 0>, <0 140 0>;
@@ -531,9 +531,9 @@
 		};
 
 		qcom,msm-dai-q6-sb-5-tx {
-                        compatible = "qcom,msm-dai-q6-dev";
-                        qcom,msm-dai-q6-dev-id = <16395>;
-                };
+			compatible = "qcom,msm-dai-q6-dev";
+			qcom,msm-dai-q6-dev-id = <16395>;
+		};
 
 		qcom,msm-dai-q6-bt-sco-rx {
 			compatible = "qcom,msm-dai-q6-dev";
@@ -575,25 +575,25 @@
 			qcom,msm-dai-q6-dev-id = <240>;
 		};
 
-                qcom,msm-dai-q6-incall-record-rx {
-                        compatible = "qcom,msm-dai-q6-dev";
-                        qcom,msm-dai-q6-dev-id = <32771>;
-                };
+		qcom,msm-dai-q6-incall-record-rx {
+			compatible = "qcom,msm-dai-q6-dev";
+			qcom,msm-dai-q6-dev-id = <32771>;
+		};
 
-                qcom,msm-dai-q6-incall-record-tx {
-                        compatible = "qcom,msm-dai-q6-dev";
-                        qcom,msm-dai-q6-dev-id = <32772>;
-                };
+		qcom,msm-dai-q6-incall-record-tx {
+			compatible = "qcom,msm-dai-q6-dev";
+			qcom,msm-dai-q6-dev-id = <32772>;
+		};
 
-                qcom,msm-dai-q6-incall-music-rx {
-                        compatible = "qcom,msm-dai-q6-dev";
-                        qcom,msm-dai-q6-dev-id = <32773>;
-                };
+		qcom,msm-dai-q6-incall-music-rx {
+			compatible = "qcom,msm-dai-q6-dev";
+			qcom,msm-dai-q6-dev-id = <32773>;
+		};
 
-                qcom,msm-dai-q6-incall-music-2-rx {
-                        compatible = "qcom,msm-dai-q6-dev";
-                        qcom,msm-dai-q6-dev-id = <32770>;
-                };
+		qcom,msm-dai-q6-incall-music-2-rx {
+			compatible = "qcom,msm-dai-q6-dev";
+			qcom,msm-dai-q6-dev-id = <32770>;
+		};
 	};
 
 	qcom,msm-pcm-hostless {
@@ -1005,7 +1005,14 @@
 		qcom,sda-gpio = <&msmgpio 18 0>;
 		qcom,scl-gpio = <&msmgpio 19 0>;
 	};
-
+/* ----- from stock (JSR D10F) ---------
+	qcom,acpuclk@f9011050 {
+		compatible = "qcom,acpuclk-a7";
+		reg = <0xf9011050 0x8 0xfc4b80b0 0x8>;
+		reg-names = "rcg_base", "pte_efuse";
+		a7_cpu-supply = <&apc_vreg_corner>;
+	}; 
+*/
 	qcom,clock-a7@f9011050 {
 		compatible = "qcom,clock-a7-8226";
 		reg = <0xf9011050 0x8>;
@@ -1334,7 +1341,7 @@
 				<55 512 3936000 393600>;
 	};
 
-        qcom,qcedev@fd400000 {
+	qcom,qcedev@fd400000 {
 		compatible = "qcom,qcedev";
 		reg  =  <0xfd400000 0x20000>,
 			<0xfd404000 0x8000>;
