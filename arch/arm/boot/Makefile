@@ -72,7 +72,7 @@ endif
 targets += $(DTB_LIST)
 
 # Rule to build device tree blobs
-$(obj)/%.dtb: $(src)/dts_jsr/%.dts FORCE
+$(obj)/%.dtb: $(src)/dts_msm8226/%.dts FORCE
 	$(call if_changed_dep,dtc)
 
 $(obj)/dtbs: $(DTB_OBJS)
