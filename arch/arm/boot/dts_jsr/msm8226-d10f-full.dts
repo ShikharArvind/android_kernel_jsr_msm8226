@@ -3212,7 +3212,8 @@
 				qcom,mdss-dsi-lane-2-state;
 				qcom,mdss-dsi-lane-3-state;
 				qcom,mdss-dsi-te-pin-select = <0x1>;
-				qcom,mdss-dsi-te-v-sync-rd-ptr-irq-line = <0x2c>;
+				/* qcom,mdss-dsi-te-v-sync-rd-ptr-irq-line = <0x2c>;  */  /* old ver devtree */
+				qcom,mdss-dsi-wr-mem-start = <0x2c>;
 				qcom,mdss-dsi-te-dcs-command = <0x1>;
 				qcom,mdss-dsi-te-check-enable;
 				qcom,mdss-dsi-te-using-te-pin;
@@ -6894,13 +6895,18 @@
 			qcom,speed-bin-fuse-sel = <22 0 3 0>;
 			qcom,cpr-corner-map = <1 1 2 2 3 3 3 3 3 3 3 3 3 3>;   /* This is required if qcom,cpr-quot-adjust-table is present */
 			qcom,cpr-quot-adjust-table =
+				<1 1 0>,
+				<1 2 0>,
+				<1 3 0>,
+				<1 4 0>,
 				<1 5 450>,
 				<1 6 375>,
 				<1 7 300>,
 				<1 8 225>,
 				<1 9 187>,
 				<1 10 150>,
-				<1 11 75>;
+				<1 11 75>,
+				<1 12 0>;
 			
 			linux,phandle = <0x57>;
 			phandle = <0x57>;
