@@ -14,7 +14,7 @@
 
 /* file "virtualkeys.synaptics_rmi4_i2c" from stock
    0x01:139:101:1343:120:96:0x01:102:360:1343:150:96:0x01:158:618:1343:120:96
-	 |    key x   y    w   h  |    key x   y    w   h  |    key x   y    w   h
+   |    key x   y    w   h  |    key x   y    w   h  |    key x   y    w   h
 */
 
 &soc {
