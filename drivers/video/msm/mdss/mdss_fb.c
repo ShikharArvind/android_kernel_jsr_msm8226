@@ -184,6 +184,8 @@ static int mdss_fb_notify_update(struct msm_fb_data_type *mfd,
 	return ret;
 }
 
+#ifdef CONFIG_MDSS_FB_SPLASH
+
 static int mdss_fb_splash_thread(void *data)
 {
 	struct msm_fb_data_type *mfd = data;
@@ -224,6 +226,8 @@ splash_err:
 end:
 	return ret;
 }
+
+#endif
 
 static int lcd_backlight_registered;
 
@@ -340,10 +344,10 @@ static void mdss_fb_parse_dt(struct msm_fb_data_type *mfd)
 {
 	u32 data[2];
 	struct platform_device *pdev = mfd->pdev;
-
+#ifdef CONFIG_MDSS_FB_SPLASH
 	mfd->splash_logo_enabled = of_property_read_bool(pdev->dev.of_node,
 				"qcom,mdss-fb-splash-logo-enabled");
-
+#endif
 	if (of_property_read_u32_array(pdev->dev.of_node, "qcom,mdss-fb-split",
 				       data, 2))
 		return;
@@ -597,7 +601,7 @@ static int mdss_fb_probe(struct platform_device *pdev)
 		mfd->mdp_sync_pt_data.retire_threshold = 0;
 		break;
 	}
-
+#ifdef CONFIG_MDSS_FB_SPLASH
 	if (mfd->splash_logo_enabled) {
 		mfd->splash_thread = kthread_run(mdss_fb_splash_thread, mfd,
 				"mdss_fb_splash");
@@ -607,9 +611,9 @@ static int mdss_fb_probe(struct platform_device *pdev)
 			mfd->splash_thread = NULL;
 		}
 	}
+#endif
 
 	INIT_DELAYED_WORK(&mfd->idle_notify_work, __mdss_fb_idle_notify_work);
-
 
 	return rc;
 }
@@ -1428,12 +1432,13 @@ static int mdss_fb_open(struct fb_info *info, int user)
 
 	pinfo->ref_cnt++;
 	mfd->ref_cnt++;
-
+#ifdef CONFIG_MDSS_FB_SPLASH
 	/* Stop the splash thread once userspace open the fb node */
 	if (mfd->splash_thread && mfd->ref_cnt > 1) {
 		kthread_stop(mfd->splash_thread);
 		mfd->splash_thread = NULL;
 	}
+#endif
 
 	return 0;
 

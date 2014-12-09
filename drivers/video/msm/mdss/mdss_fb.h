@@ -33,7 +33,9 @@
 #define WAIT_DISP_OP_TIMEOUT ((WAIT_FENCE_FIRST_TIMEOUT + \
 		WAIT_FENCE_FINAL_TIMEOUT) * MDP_MAX_FENCE_FD)
 
+#ifdef CONFIG_MDSS_FB_SPLASH
 #define SPLASH_THREAD_WAIT_TIMEOUT 3
+#endif
 
 #ifndef MAX
 #define  MAX(x, y) (((x) > (y)) ? (x) : (y))
@@ -69,10 +71,12 @@ enum mdp_notify_event {
 	MDP_NOTIFY_FRAME_TIMEOUT,
 };
 
+#ifdef CONFIG_MDSS_FB_SPLASH
 enum mdp_splash_event {
 	MDP_CREATE_SPLASH_OV = 0,
 	MDP_REMOVE_SPLASH_OV,
 };
+#endif
 
 struct disp_info_type_suspend {
 	int op_enable;
@@ -131,7 +135,9 @@ struct msm_mdp_interface {
 	int (*update_ad_input)(struct msm_fb_data_type *mfd);
 	int (*panel_register_done)(struct mdss_panel_data *pdata);
 	u32 (*fb_stride)(u32 fb_index, u32 xres, int bpp);
+#ifdef CONFIG_MDSS_FB_SPLASH
 	int (*splash_fnc) (struct msm_fb_data_type *mfd, int *index, int req);
+#endif
 	struct msm_sync_pt_data *(*get_sync_fnc)(struct msm_fb_data_type *mfd,
 				const struct mdp_buf_sync *buf_sync);
 	void *private1;
@@ -219,8 +225,10 @@ struct msm_fb_data_type {
 	wait_queue_head_t kickoff_wait_q;
 	bool shutdown_pending;
 
+#ifdef CONFIG_MDSS_FB_SPLASH
 	struct task_struct *splash_thread;
 	bool splash_logo_enabled;
+#endif
 
 	wait_queue_head_t ioctl_q;
 	atomic_t ioctl_ref_cnt;

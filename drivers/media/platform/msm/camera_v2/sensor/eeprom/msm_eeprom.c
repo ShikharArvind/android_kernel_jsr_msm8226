@@ -18,7 +18,7 @@
 #include "msm_eeprom.h"
 
 #undef CDBG
-#ifdef MSM_EEPROM_DEBUG
+#ifdef CONFIG_MSM_EEPROM_DEBUG
 #define CDBG(fmt, args...) pr_err(fmt, ##args)
 #else
 #define CDBG(fmt, args...) pr_debug(fmt, ##args)
