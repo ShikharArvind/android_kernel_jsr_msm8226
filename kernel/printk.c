@@ -729,6 +729,15 @@ static void call_console_drivers(unsigned start, unsigned end)
 	_call_console_drivers(start_print, end, msg_level);
 }
 
+static int log_no_ring = 0;
+
+static int __init log_no_ring_setup(char *str)
+{
+	get_option(&str, &log_no_ring);
+	return 0;
+}
+early_param("log_no_ring", log_no_ring_setup);
+
 static void emit_log_char_pmem(char c);
 
 static void emit_log_char(char c)
@@ -743,6 +752,8 @@ static void emit_log_char(char c)
 		logged_chars = 0;
 	}
 
+	if (log_no_ring && log_end - log_start >= log_buf_len) goto exit;
+
 	emit_log_char_pmem(c);
 
 	LOG_BUF(log_end) = c;
@@ -754,6 +765,7 @@ static void emit_log_char(char c)
 	if (logged_chars < log_buf_len)
 		logged_chars++;
 
+exit:
 	if (unlikely(start_apanic_threads &&
 		((log_end & (LOG_BUF_MASK + 1)) == __LOG_BUF_LEN))) {
 		emergency_dump();
