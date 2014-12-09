@@ -12,6 +12,11 @@
 
 /* /include/ "msm8226-camera-sensor-qrd.dtsi" */
 
+/* file "virtualkeys.synaptics_rmi4_i2c" from stock
+   0x01:139:101:1343:120:96:0x01:102:360:1343:150:96:0x01:158:618:1343:120:96
+	 |    key x   y    w   h  |    key x   y    w   h  |    key x   y    w   h
+*/
+
 &soc {
 	serial@f991f000 {
 		status = "ok";
@@ -28,52 +33,26 @@
 			synaptics,reset-gpio = <&msmgpio 16 0x00>;
 			synaptics,irq-gpio = <&msmgpio 17 0x2008>;
 			synaptics,button-map = <139 102 158>;             /* virtual key code mappings to be used */
+			/* synaptics,x-flip = modify orientation of the x axis */
+			/* synaptics,y-flip = modify orientation of the y axis */
+			/* synaptics,panel-coords = touch panel min x, min y, max x and max y resolution */
+			/* synaptics,display-coords = display min x, min y, max x and max y resolution */
 			/* synaptics,fw-image-name = "PR1468813.img"; */  /* name of firmware .img file in /etc/firmware */
 			synaptics,i2c-pull-up;
 			synaptics,power-down;        /* fully power down regulators in suspend  */
 			synaptics,disable-gpios;     /* specify to disable gpios in suspend (power saving) */
 		};
-
-		focaltech@38 {
-			compatible = "focaltech,5x06";
-			reg = <0x38>;
-			interrupt-parent = <&msmgpio>;
-			interrupts = <17 0x2>;
-			vdd-supply = <&pm8226_l19>;
-			vcc_i2c-supply = <&pm8226_lvs1>;
-			focaltech,name = "ft5x06";
-			focaltech,family-id = <0x55>;
-			focaltech,reset-gpio = <&msmgpio 16 0x00>;
-			focaltech,irq-gpio = <&msmgpio 17 0x00>;
-			focaltech,display-coords = <0 0 1080 1920>;
-			focaltech,panel-coords = <0 0 1080 2000>;
-			focaltech,button-map= <139 102 158>;
-			focaltech,no-force-update;
-			focaltech,i2c-pull-up;
-			focaltech,group-id = <1>;
-			focaltech,hard-reset-delay-ms = <20>;
-			focaltech,soft-reset-delay-ms = <150>;
-			focaltech,num-max-touches = <5>;
-			/* focaltech,fw-name = "ft_8226_qrd_1080p_fw.bin"; */
-			focaltech,fw-delay-aa-ms = <50>;
-			focaltech,fw-delay-55-ms = <30>;
-			focaltech,fw-upgrade-id1 = <0x79>;
-			focaltech,fw-upgrade-id2 = <0x03>;
-			focaltech,fw-delay-readid-ms = <10>;
-			focaltech,fw-delay-era-flsh-ms = <2000>;
-			focaltech,fw-auto-cal;
-		};
 	};
 
 	gen-vkeys {
 		compatible = "qcom,gen-vkeys";
-		label = "synaptics";
+		label = "synaptics_rmi4_i2c";
 		qcom,disp-maxx = <720>;
 		qcom,disp-maxy = <1280>;
-		qcom,panel-maxx = <760>;
-		qcom,panel-maxy = <1424>;
+		qcom,panel-maxx = <720>;
+		qcom,panel-maxy = <1392>;       /* 1343 + 96/2 = 1391 */
 		qcom,key-codes = <139 102 158>;
-		qcom,y-offset = <0>;
+		qcom,y-offset = <35>;
 	};
 
 	gpio_keys {
