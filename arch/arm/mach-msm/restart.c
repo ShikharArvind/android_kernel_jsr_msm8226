@@ -269,6 +269,8 @@ early_param("panic_restart", panic_restart_setup);
 
 static void msm_restart_prepare(const char *cmd)
 {
+	int rstmode;
+	
 #ifdef CONFIG_MSM_DLOAD_MODE
 
 	/* This looks like a normal reboot at this point. */
@@ -294,6 +296,14 @@ static void msm_restart_prepare(const char *cmd)
 	else
 		qpnp_pon_system_pwr_off(PON_POWER_OFF_HARD_RESET);
 
+	if (panic_restart == 9)
+		panic_restart = 1000 + RECOVERY_MODE - FASTBOOT_MODE;   // RECOVERY_MODE
+
+	rstmode = ADB_REBOOT;
+	
+	if (in_panic == 1 || (panic_restart / 1000 == 1))
+		rstmode = FASTBOOT_MODE + (panic_restart % 1000);
+	
 	if (cmd != NULL) {
 		if (!strncmp(cmd, "bootloader", 10)) {
 			__raw_writel(FASTBOOT_MODE, restart_reason);
@@ -309,13 +319,13 @@ static void msm_restart_prepare(const char *cmd)
 		} else if (!strncmp(cmd, "edl", 3)) {
 			enable_emergency_dload_mode();
 		} else {
-			__raw_writel(ADB_REBOOT, restart_reason);
+			__raw_writel(rstmode, restart_reason);
 		}
 	} else if (in_panic == 1) {
-		__raw_writel(FASTBOOT_MODE + panic_restart, restart_reason);
+		__raw_writel(rstmode, restart_reason);
 		//if (panic_restart == 5) qpnp_pon_store_extra_reset_info(RESET_EXTRA_PANIC_REASON, RESET_EXTRA_PANIC_REASON);    // Motorola 
 	} else {
-		__raw_writel(ADB_REBOOT, restart_reason);
+		__raw_writel(rstmode, restart_reason);
 	}
 
 	flush_cache_all();
