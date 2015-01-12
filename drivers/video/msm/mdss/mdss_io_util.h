@@ -19,6 +19,10 @@
 #include <linux/i2c.h>
 #include <linux/types.h>
 
+#ifndef DEBUG
+#define DEBUG
+#endif
+
 #ifdef DEBUG
 #define DEV_DBG(fmt, args...)   pr_err(fmt, ##args)
 #else

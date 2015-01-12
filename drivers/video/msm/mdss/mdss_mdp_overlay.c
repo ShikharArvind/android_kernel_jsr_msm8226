@@ -35,7 +35,10 @@
 #include "mdss_mdp.h"
 #include "mdss_mdp_rotator.h"
 
+#ifdef CONFIG_MDSS_FB_SPLASH
 #include "splash.h"
+#endif
+
 #if defined(CONFIG_LGE_MIPI_TOVIS_VIDEO_540P_PANEL) || defined(CONFIG_FB_MSM_MIPI_TIANMA_VIDEO_QHD_PT_PANEL)
 extern int is_dsv_cont_splash_screening_f;
 extern int has_dsv_f;
@@ -450,10 +453,12 @@ static int mdss_mdp_overlay_pipe_setup(struct msm_fb_data_type *mfd,
 		}
 
 		if (pipe == NULL) {
-			pr_err("error allocating pipe\n");
+			pr_err("error allocating pipe (type=%d , req_type=%d) \n", pipe_type, req->pipe_type);
+			//if (pipe_type == MDSS_MDP_PIPE_TYPE_RGB) pipe = mdss_mdp_pipe_alloc(mixer, MDSS_MDP_PIPE_TYPE_VIG);
+			//if (pipe) goto next;
 			return -ENOMEM;
 		}
-
+//next:
 		ret = mdss_mdp_pipe_map(pipe);
 		if (ret) {
 			pr_err("unable to map pipe=%d\n", pipe->num);
@@ -688,6 +693,7 @@ static int mdss_mdp_overlay_set(struct msm_fb_data_type *mfd,
 		req->z_order += MDSS_MDP_STAGE_0;
 
 		ret = mdss_mdp_overlay_pipe_setup(mfd, req, &pipe);
+		if (ret == -ENOMEM) pr_err("ERROR in mdss_mdp_overlay_pipe_setup: req->flags = %d \n", req->flags);
 
 		req->z_order -= MDSS_MDP_STAGE_0;
 	}
@@ -1033,8 +1039,8 @@ static int __overlay_queue_pipes(struct msm_fb_data_type *mfd)
 		if ((pipe->type == MDSS_MDP_PIPE_TYPE_DMA) &&
 		    (ctl->shared_lock && !ctl->mdata->has_wfd_blk)) {
 			if (ctl->mdata->mixer_switched) {
-				ret = mdss_mdp_overlay_pipe_setup(mfd,
-						&pipe->req_data, &pipe);
+				ret = mdss_mdp_overlay_pipe_setup(mfd, &pipe->req_data, &pipe);
+				if (ret == -ENOMEM) pr_err("ERROR: ctl=%d \n", ctl->num);
 				pr_debug("reseting DMA pipe for ctl=%d",
 					 ctl->num);
 			}
@@ -1511,6 +1517,7 @@ static int mdss_mdp_overlay_get_fb_pipe(struct msm_fb_data_type *mfd,
 			pr_debug("allocating base pipe mux=%d\n", mixer_mux);
 
 			ret = mdss_mdp_overlay_pipe_setup(mfd, &req, &pipe);
+			if (ret == -ENOMEM) pr_err("ERROR: mdss_mdp_overlay_pipe_setup \n");
 			if (ret)
 				return ret;
 		} else {
@@ -1525,6 +1532,7 @@ static int mdss_mdp_overlay_get_fb_pipe(struct msm_fb_data_type *mfd,
 			}
 
 			ret = mdss_mdp_overlay_pipe_setup(mfd, req_ov, &pipe);
+			if (ret == -ENOMEM) pr_err("ERROR: mdss_mdp_overlay_pipe_setup \n");
 			if (ret)
 				return ret;
 		}
@@ -2347,6 +2355,7 @@ static int __handle_overlay_prepare(struct msm_fb_data_type *mfd,
 
 		req->z_order += MDSS_MDP_STAGE_0;
 		ret = mdss_mdp_overlay_pipe_setup(mfd, req, &pipe);
+		if (ret == -ENOMEM) pr_err("ERROR: mdss_mdp_overlay_pipe_setup \n");
 		req->z_order -= MDSS_MDP_STAGE_0;
 
 		if (IS_ERR_VALUE(ret))
@@ -2712,6 +2721,10 @@ static int mdss_mdp_overlay_off(struct msm_fb_data_type *mfd)
 
 int mdss_panel_register_done(struct mdss_panel_data *pdata)
 {
+	/*
+	 * Clocks are already on if continuous splash is enabled,
+	 * increasing ref_cnt to help balance clocks once done.
+	 */
 	if (pdata->panel_info.cont_splash_enabled)
 		mdss_mdp_footswitch_ctrl_splash(1);
 
@@ -2814,6 +2827,7 @@ error:
 	return rc;
 }
 
+#ifdef CONFIG_MDSS_FB_SPLASH
 static int mdss_mdp_overlay_splash_image(struct msm_fb_data_type *mfd,
 						int *pipe_ndx, int splash_event)
 {
@@ -2870,6 +2884,7 @@ static int mdss_mdp_overlay_splash_image(struct msm_fb_data_type *mfd,
 
 	return rc;
 }
+#endif
 
 static void __vsync_retire_handle_vsync(struct mdss_mdp_ctl *ctl, ktime_t t)
 {
@@ -2989,7 +3004,9 @@ int mdss_mdp_overlay_init(struct msm_fb_data_type *mfd)
 	mdp5_interface->panel_register_done = mdss_panel_register_done;
 	mdp5_interface->kickoff_fnc = mdss_mdp_overlay_kickoff;
 	mdp5_interface->get_sync_fnc = mdss_mdp_rotator_sync_pt_get;
+#ifdef CONFIG_MDSS_FB_SPLASH
 	mdp5_interface->splash_fnc = mdss_mdp_overlay_splash_image;
+#endif
 
 	mdp5_data = kmalloc(sizeof(struct mdss_overlay_private), GFP_KERNEL);
 	if (!mdp5_data) {

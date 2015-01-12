@@ -17,6 +17,10 @@
 #include <linux/platform_device.h>
 #include <linux/types.h>
 
+#ifndef DEBUG
+#define DEBUG
+#endif
+
 /* panel id type */
 struct panel_id {
 	u16 id;

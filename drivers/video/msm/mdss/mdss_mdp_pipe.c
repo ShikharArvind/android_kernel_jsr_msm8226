@@ -520,15 +520,18 @@ static struct mdss_mdp_pipe *mdss_mdp_pipe_init(struct mdss_mdp_mixer *mixer,
 		pipe = NULL;
 	}
 
+	if (!pipe) 
+	  pr_info("%s:%d, pipe=NULL, type=%d, off=%d, npipes=%d, pipe_pool=%p \n", __func__, __LINE__, type, off, npipes, pipe_pool); 
+	
 	if (pipe && mdss_mdp_pipe_fetch_halt(pipe)) {
-		pr_err("%d failed because vbif client is in bad state\n",
-			pipe->num);
+		pr_err("%d failed because vbif client is in bad state\n",	pipe->num);
 		atomic_dec(&pipe->ref_cnt);
 		return NULL;
 	}
 
 	if (pipe) {
-		pr_debug("type=%x   pnum=%d\n", pipe->type, pipe->num);
+		//pr_debug("type=%x   pnum=%d\n", pipe->type, pipe->num);
+		pr_info("%s:%d, type=%x   pnum=%d\n", __func__, __LINE__, pipe->type, pipe->num);
 		mutex_init(&pipe->pp_res.hist.hist_mutex);
 		spin_lock_init(&pipe->pp_res.hist.hist_lock);
 	} else if (pipe_share) {
@@ -538,7 +541,8 @@ static struct mdss_mdp_pipe *mdss_mdp_pipe_init(struct mdss_mdp_mixer *mixer,
 		 */
 		pipe = mdata->dma_pipes + mixer->num;
 		mdss_mdp_pipe_map(pipe);
-		pr_debug("pipe sharing for pipe=%d\n", pipe->num);
+		//pr_debug("pipe sharing for pipe=%d\n", pipe->num);
+		pr_info("%s:%d, pipe sharing for pipe=%d\n", __func__, __LINE__, pipe->num);
 	} else {
 		pr_err("no %d type pipes available\n", type);
 	}
