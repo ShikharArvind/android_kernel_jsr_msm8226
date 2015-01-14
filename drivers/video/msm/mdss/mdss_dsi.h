@@ -355,4 +355,17 @@ int mdss_dsi_bta_status_check(struct mdss_dsi_ctrl_pdata *ctrl);
 int mdss_dsi_panel_init(struct device_node *node,
 		struct mdss_dsi_ctrl_pdata *ctrl_pdata,
 		bool cmd_cfg_cont_splash);
+    
+#ifdef CONFIG_JSR_LCD_COMMON
+#define GLASS_TYPE_AUO        0
+#define GLASS_TYPE_CMI        1
+#define GLASS_TYPE_AUO_ASI    2
+#define GLASS_TYPE_LG         3
+#define GLASS_TYPE_UNKNOWN    4
+
+extern int glass_type;
+const char * get_panel_glass_name(void);
+int get_lcd_panel_glass_type(struct device * dev);
+#endif    
+    
 #endif /* MDSS_DSI_H */

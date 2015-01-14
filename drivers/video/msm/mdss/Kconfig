@@ -62,7 +62,13 @@ config FB_MSM_MIPI_LGIT_LH470WX1_VIDEO_HD_PT_PANEL
 	bool "MIPI LG Display HD PT Panel"
 	---help---
 	Support for LGIT LH470WX1  VIDEO QHD PT panel
+
 config FB_MSM_MIPI_TOVIS_LM570HN1A_VIDEO_HD_PT_PANEL
 	bool "MIPI TOVIS Display HD PT Panel"
 	---help---
 	Support for TOVIS LM570HN1A  VIDEO HD PT panel
+
+config JSR_LCD_COMMON
+	bool "JSR LCD common"
+	default n
+

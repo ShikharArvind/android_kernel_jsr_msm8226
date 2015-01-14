@@ -28,6 +28,42 @@
 
 #define DT_CMD_HDR 6
 
+#ifdef CONFIG_JSR_LCD_COMMON
+
+#define LCD_PANEL_ID0_GPIO    4
+#define LCD_PANEL_ID1_GPIO    5
+
+int glass_type = GLASS_TYPE_AUO;
+
+static struct kobject * glasstype_obj;
+
+static ssize_t glasstype_show(struct kobject *obj,
+		struct kobj_attribute *attr, char *buf)
+{
+	const char * name = get_panel_glass_name();
+	strlcpy(buf, name, 128);
+	return strnlen(buf, 128);
+}
+
+static struct kobj_attribute glasstype_obj_attr = {
+	.attr = {
+		.mode = S_IRUGO,
+		.name = "glass_type",
+	},
+	.show = glasstype_show,
+};
+
+static struct attribute *glasstype_attr[] = {
+	&glasstype_obj_attr.attr,
+	NULL,
+};
+
+static struct attribute_group glasstype_grp = {
+	.attrs = glasstype_attr,
+};
+ 
+#endif
+
 DEFINE_LED_TRIGGER(bl_led_trigger);
 
 #if defined(CONFIG_BACKLIGHT_LM3630)
@@ -718,6 +754,7 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	const char *data;
 	static const char *pdest;
 	struct mdss_panel_info *pinfo = &(ctrl_pdata->panel_data.panel_info);
+	char * of_cmd_key;
 
 	//hw_rev_type hw_rev;
 	//hw_rev = lge_get_board_revno();
@@ -1012,19 +1049,32 @@ static int mdss_panel_parse_dt(struct device_node *np,
 	mdss_dsi_parse_reset_seq(np, pinfo->rst_seq, &(pinfo->rst_seq_len),
 		"qcom,mdss-dsi-reset-sequence");
 
+	of_cmd_key = "qcom,mdss-dsi-on-command";
+	
+#ifdef CONFIG_JSR_LCD_COMMON
+	data = of_get_property(np, of_cmd_key, NULL);
+	if (!data) {
+		if (glass_type == GLASS_TYPE_CMI) {
+			of_cmd_key = "qcom,mdss-dsi-on-command-cmi";
+		} else {
+			of_cmd_key = "qcom,mdss-dsi-on-command-auo";
+		}
+	}
+#endif
+	
 	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->on_cmds,
-		"qcom,mdss-dsi-on-command", "qcom,mdss-dsi-on-command-state");
+		of_cmd_key, "qcom,mdss-dsi-on-command-state");
 
 	mdss_dsi_parse_dcs_cmds(np, &ctrl_pdata->off_cmds,
 		"qcom,mdss-dsi-off-command", "qcom,mdss-dsi-off-command-state");
 
-	#if defined(CONFIG_LGE_MIPI_TOVIS_VIDEO_540P_PANEL) || defined(CONFIG_FB_MSM_MIPI_TIANMA_VIDEO_QHD_PT_PANEL)
+#if defined(CONFIG_LGE_MIPI_TOVIS_VIDEO_540P_PANEL) || defined(CONFIG_FB_MSM_MIPI_TIANMA_VIDEO_QHD_PT_PANEL)
 	mdss_dsi_parse_dcs_cmds(np, &lge_display_on_cmds,
 		"lge,display-on-cmds", "qcom,mdss-dsi-on-command-state");
 
 	mdss_dsi_parse_dcs_cmds(np, &lge_sleep_in_cmds,
 		"lge,sleep-in-cmds", "qcom,mdss-dsi-off-command-state");
-	#endif
+#endif
 
 	return 0;
 
@@ -1088,9 +1138,122 @@ int mdss_dsi_panel_init(struct device_node *node,
 		ctrl_pdata->partial_update_fnc = NULL;
 	}
 
+#ifdef CONFIG_JSR_LCD_COMMON
+
+	glasstype_obj = kobject_create_and_add("glass_type", NULL);
+	if (!glasstype_obj) {
+		pr_err("%s: unable to create kobject '%s' \n", __func__, "glass_type");
+		return -ENOMEM;
+	}
+
+	rc = sysfs_create_group(glasstype_obj, &glasstype_grp);
+	if (rc) {
+		pr_err("%s: sysfs_create_group '%s' failed \n", __func__, "glass_type");
+		kobject_put(glasstype_obj);
+		return rc;
+	}
+	pr_info("%s: create kobject and sysfs_group '%s' \n", __func__, "glass_type");
+
+#endif
+	
 	ctrl_pdata->on = mdss_dsi_panel_on;
 	ctrl_pdata->off = mdss_dsi_panel_off;
 	ctrl_pdata->panel_data.set_backlight = mdss_dsi_panel_bl_ctrl;
 
 	return 0;
 }
+
+#ifdef CONFIG_JSR_LCD_COMMON
+
+#define GLASS_TYPE_PREFIX  "Panel Glass Type: "
+
+const char * get_panel_glass_name(void)
+{
+  switch(glass_type) {
+    case GLASS_TYPE_AUO: 
+      return GLASS_TYPE_PREFIX "NT35590_AUO\n";
+    case GLASS_TYPE_CMI:
+      return GLASS_TYPE_PREFIX "NT35590_CMI\n";
+    case GLASS_TYPE_AUO_ASI: 
+      return GLASS_TYPE_PREFIX "NT35521_AUO_aSi\n";
+    case GLASS_TYPE_LG: 
+      return GLASS_TYPE_PREFIX "NT35521_LG_goworld\n";
+  }
+  return GLASS_TYPE_PREFIX "Unknown\n";
+};
+
+int get_lcd_panel_glass_type(struct device * dev)
+{
+  int rc = 0;
+  int id0_err = 1;
+  int id1_err = 1;
+  u32 cfg;
+  u32 lcd_id0;
+  u32 lcd_id1;
+
+  id0_err = gpio_request(LCD_PANEL_ID0_GPIO, "lcd_panel_id0");
+  if (id0_err) {
+    rc = id0_err;
+    pr_err("%s: request lcd panel id0 gpio failed, rc=%d \n", __func__, rc);
+    goto err;
+  }
+  cfg = GPIO_CFG(LCD_PANEL_ID0_GPIO, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA); 
+  rc = gpio_tlmm_config(cfg, GPIO_CFG_ENABLE);    // cfg = 0x60040, GPIO_CFG_ENABLE = 0
+  if (rc) {
+    pr_err("%s: unable to config tlmm = %d \n", __func__, rc);
+    goto err;
+  }
+  rc = gpio_direction_input(LCD_PANEL_ID0_GPIO);
+  if (rc) {
+    pr_err("%s: set_direction for lcd panel id0 gpio failed, rc=%d \n", __func__, rc);
+    goto err;
+  } 
+
+  id1_err = gpio_request(LCD_PANEL_ID1_GPIO, "lcd_panel_id1");
+  if (id1_err) {
+    rc = id1_err;
+    pr_err("%s: request lcd panel id1 gpio failed, rc=%d \n", __func__, rc);
+    goto err;
+  }
+  cfg = GPIO_CFG(LCD_PANEL_ID1_GPIO, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA); 
+  rc = gpio_tlmm_config(cfg, GPIO_CFG_ENABLE);    // cfg = 0x60040, GPIO_CFG_ENABLE = 0
+  if (rc) {
+    pr_err("%s: unable to config tlmm = %d \n", __func__, rc);
+    goto err;
+  }
+  rc = gpio_direction_input(LCD_PANEL_ID1_GPIO);
+  if (rc) {
+    pr_err("%s: set_direction for lcd panel id1 gpio failed, rc=%d \n", __func__, rc);
+    goto err;
+  } 
+  
+  mdelay(6);  // wait 6ms
+
+  lcd_id0 = gpio_get_value(LCD_PANEL_ID0_GPIO);
+  lcd_id1 = gpio_get_value(LCD_PANEL_ID1_GPIO);
+
+  // AUO:     lcd_id0=1 lcd_id1=0 glass_type=0  (rev.B, rev.C)
+  // CMI:     lcd_id0=0 lcd_id1=0 glass_type=1  (rev.A)
+  // AUO_aSi: 
+  // LG:
+
+  if (lcd_id0 == 0 && lcd_id1 == 0) {
+    glass_type = GLASS_TYPE_CMI;
+  } else {
+    glass_type = GLASS_TYPE_AUO;
+  }
+
+  pr_info("%s: lcd_id0=%d lcd_id1=%d glass_type=%d \n", __func__, lcd_id0, lcd_id1, glass_type);
+
+err:
+  if (id1_err == 0) 
+    gpio_free(LCD_PANEL_ID1_GPIO);
+  if (id0_err == 0) 
+    gpio_free(LCD_PANEL_ID0_GPIO);
+
+  pr_info("%s: %s \n", __func__, get_panel_glass_name());
+  return rc;
+}
+
+#endif
+
