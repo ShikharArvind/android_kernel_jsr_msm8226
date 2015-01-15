@@ -3432,10 +3432,10 @@ static struct clk_lookup msm_clocks_8226[] = {
 	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "20.qcom,camera"),
 
 	/* eeprom clocks */
-	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "6c.qcom,eeprom"),
-	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "6c.qcom,eeprom"),
-	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "18.qcom,eeprom"),
-	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "18.qcom,eeprom"),
+	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "6f.qcom,eeprom"),
+	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "6f.qcom,eeprom"),
+	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "13.qcom,eeprom"),
+	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "13.qcom,eeprom"),
 	CLK_LOOKUP("cam_src_clk", mclk0_clk_src.c, "6b.qcom,eeprom"),
 	CLK_LOOKUP("cam_clk", camss_mclk0_clk.c, "6b.qcom,eeprom"),
 
