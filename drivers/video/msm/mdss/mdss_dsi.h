@@ -363,6 +363,8 @@ int mdss_dsi_panel_init(struct device_node *node,
 #define GLASS_TYPE_LG         3
 #define GLASS_TYPE_UNKNOWN    4
 
+#define GLASS_TYPE_OBJ_NAME   "glass_type"
+
 extern int glass_type;
 const char * get_panel_glass_name(void);
 int get_lcd_panel_glass_type(struct device * dev);

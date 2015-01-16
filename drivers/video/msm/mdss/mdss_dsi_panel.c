@@ -33,7 +33,7 @@
 #define LCD_PANEL_ID0_GPIO    4
 #define LCD_PANEL_ID1_GPIO    5
 
-int glass_type = GLASS_TYPE_AUO;
+int glass_type = GLASS_TYPE_UNKNOWN;
 
 static struct kobject * glasstype_obj;
 
@@ -48,7 +48,7 @@ static ssize_t glasstype_show(struct kobject *obj,
 static struct kobj_attribute glasstype_obj_attr = {
 	.attr = {
 		.mode = S_IRUGO,
-		.name = "glass_type",
+		.name = GLASS_TYPE_OBJ_NAME,
 	},
 	.show = glasstype_show,
 };
@@ -1054,10 +1054,19 @@ static int mdss_panel_parse_dt(struct device_node *np,
 #ifdef CONFIG_JSR_LCD_COMMON
 	data = of_get_property(np, of_cmd_key, NULL);
 	if (!data) {
-		if (glass_type == GLASS_TYPE_CMI) {
+		switch (glass_type) {
+		case GLASS_TYPE_CMI:
 			of_cmd_key = "qcom,mdss-dsi-on-command-cmi";
-		} else {
+			break;
+		case GLASS_TYPE_AUO:
 			of_cmd_key = "qcom,mdss-dsi-on-command-auo";
+			break;
+		case GLASS_TYPE_AUO_ASI:
+			of_cmd_key = "qcom,mdss-dsi-on-command-auo-asi";
+			break;
+		case GLASS_TYPE_LG:
+			of_cmd_key = "qcom,mdss-dsi-on-command-lg";
+			break;
 		}
 	}
 #endif
@@ -1140,19 +1149,19 @@ int mdss_dsi_panel_init(struct device_node *node,
 
 #ifdef CONFIG_JSR_LCD_COMMON
 
-	glasstype_obj = kobject_create_and_add("glass_type", NULL);
+	glasstype_obj = kobject_create_and_add(GLASS_TYPE_OBJ_NAME, NULL);
 	if (!glasstype_obj) {
-		pr_err("%s: unable to create kobject '%s' \n", __func__, "glass_type");
+		pr_err("%s: unable to create kobject '%s' \n", __func__, GLASS_TYPE_OBJ_NAME);
 		return -ENOMEM;
 	}
 
 	rc = sysfs_create_group(glasstype_obj, &glasstype_grp);
 	if (rc) {
-		pr_err("%s: sysfs_create_group '%s' failed \n", __func__, "glass_type");
+		pr_err("%s: sysfs_create_group '%s' failed \n", __func__, GLASS_TYPE_OBJ_NAME);
 		kobject_put(glasstype_obj);
 		return rc;
 	}
-	pr_info("%s: create kobject and sysfs_group '%s' \n", __func__, "glass_type");
+	pr_info("%s: create kobject and sysfs_group '%s' \n", __func__, GLASS_TYPE_OBJ_NAME);
 
 #endif
 	
@@ -1216,7 +1225,7 @@ int get_lcd_panel_glass_type(struct device * dev)
     goto err;
   }
   cfg = GPIO_CFG(LCD_PANEL_ID1_GPIO, 0, GPIO_CFG_INPUT, GPIO_CFG_NO_PULL, GPIO_CFG_8MA); 
-  rc = gpio_tlmm_config(cfg, GPIO_CFG_ENABLE);    // cfg = 0x60040, GPIO_CFG_ENABLE = 0
+  rc = gpio_tlmm_config(cfg, GPIO_CFG_ENABLE);    // cfg = 0x60050, GPIO_CFG_ENABLE = 0
   if (rc) {
     pr_err("%s: unable to config tlmm = %d \n", __func__, rc);
     goto err;
@@ -1232,16 +1241,19 @@ int get_lcd_panel_glass_type(struct device * dev)
   lcd_id0 = gpio_get_value(LCD_PANEL_ID0_GPIO);
   lcd_id1 = gpio_get_value(LCD_PANEL_ID1_GPIO);
 
-  // AUO:     lcd_id0=1 lcd_id1=0 glass_type=0  (rev.B, rev.C)
+  // AUO:     lcd_id0=1 lcd_id1=0 glass_type=0  (rev.B)
   // CMI:     lcd_id0=0 lcd_id1=0 glass_type=1  (rev.A)
-  // AUO_aSi: 
-  // LG:
+  // AUO_aSi: lcd_id0=1 lcd_id1=1 glass_type=2  (rev.C)
+  // LG:      ????????????????????????????????
 
-  if (lcd_id0 == 0 && lcd_id1 == 0) {
+  if (lcd_id0 == 0 && lcd_id1 == 0)
     glass_type = GLASS_TYPE_CMI;
-  } else {
+  if (lcd_id0 == 1 && lcd_id1 == 0)
     glass_type = GLASS_TYPE_AUO;
-  }
+  if (lcd_id0 == 1 && lcd_id1 == 1)
+    glass_type = GLASS_TYPE_AUO_ASI;
+  if (lcd_id0 == 0 && lcd_id1 == 1)
+    glass_type = GLASS_TYPE_LG;
 
   pr_info("%s: lcd_id0=%d lcd_id1=%d glass_type=%d \n", __func__, lcd_id0, lcd_id1, glass_type);
 
