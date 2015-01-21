@@ -24,7 +24,7 @@
 
 &cci {
 
-	actuator0: qcom,actuator@13 {
+	actuator2: qcom,actuator@13 {
 		cell-index = <2>;
 		reg = <0x13>;
 		compatible = "qcom,actuator";
@@ -61,15 +61,6 @@
 		qcom,poll6 = <0x0 0x0 0x2 0x0 0x1 0x1>;
 		qcom,mem6 = <0x0 0x0 0x2 0x0 0x1 0x0>;
 
-		cam_vdig-supply = <&pm8226_l5>;
-		cam_vana-supply = <&pm8226_l19>;
-		cam_vio-supply = <&pm8226_lvs1>;
-		qcom,cam-vreg-name = "cam_vdig", "cam_vana", "cam_vio";
-		qcom,cam-vreg-type = <0 1 2>;
-		qcom,cam-vreg-min-voltage = <1200000 2850000 0>;
-		qcom,cam-vreg-max-voltage = <1200000 2850000 0>;
-		qcom,cam-vreg-op-mode = <200000 80000 0>;
-		
 		qcom,gpio-no-mux = <0>;
 		gpios = <&msmgpio 26 0>,
 			<&msmgpio 36 0>,
@@ -95,11 +86,12 @@
 		qcom,slave-id = <0x6c 0x300a 0xd825>;
 		qcom,csiphy-sd-index = <0>;
 		qcom,csid-sd-index = <0>;
-		qcom,actuator-src = <&actuator0>;
+		qcom,actuator-src = <&actuator2>;
 		qcom,led-flash-src = <&led_flash0>;
 		qcom,eeprom-src = <&eeprom0>;
 		qcom,mount-angle = <90>;
 		qcom,sensor-name = "ov13850";
+		
 		cam_vdig-supply = <&pm8226_l5>;
 		cam_vana-supply = <&pm8226_l19>;
 		cam_vio-supply = <&pm8226_lvs1>;
@@ -130,7 +122,7 @@
 		qcom,cci-master = <0>;
 	};
 
-	actuator1: qcom,actuator@18 {
+	actuator0: qcom,actuator@18 {
 		cell-index = <0>;
 		reg = <0x18>;
 		compatible = "qcom,actuator";
@@ -165,16 +157,7 @@
 		qcom,pageen4 = <0x1 0x3500 0x2 0x81 0x1 0xa>;
 		qcom,poll4 = <0x0 0x0 0x2 0x0 0x1 0x1>;
 		qcom,mem4 = <0x40 0x3504 0x2 0x0 0x1 0x0>;
-		
-		cam_vdig-supply = <&pm8226_l5>;
-		cam_vio-supply = <&pm8226_lvs1>;
-		cam_vana-supply = <&pm8226_l19>;
-		qcom,cam-vreg-name = "cam_vdig", "cam_vana", "cam_vio";
-		qcom,cam-vreg-type = <0 1 2>;
-		qcom,cam-vreg-min-voltage = <1200000 2850000 0>;
-		qcom,cam-vreg-max-voltage = <1200000 2850000 0>;
-		qcom,cam-vreg-op-mode = <200000 80000 0>;
-		
+
 		qcom,gpio-no-mux = <0>;
 		gpios = <&msmgpio 26 0>,
 			<&msmgpio 36 0>,
@@ -187,17 +170,9 @@
 		qcom,gpio-vdig = <4>;
 		qcom,gpio-req-tbl-num = <0 1 2 3 4>;
 		qcom,gpio-req-tbl-flags = <1 0 0 0 0>;
-		qcom,gpio-req-tbl-label = "CAMIF_MCLK",
-			"CAM_STANDBY",
-			"CAM_VIO",
-			"CAM_VANA",
-			"CAM_VDIG";
-		qcom,cam-power-seq-type = "sensor_gpio",
-			"sensor_gpio", "sensor_gpio",
-			"sensor_gpio", "sensor_clk";
-		qcom,cam-power-seq-val = "sensor_gpio_vio", "sensor_gpio_vana", "sensor_gpio_vdig",
-			"sensor_gpio_standby",
-			"sensor_cam_mclk";
+		qcom,gpio-req-tbl-label = "CAMIF_MCLK", "CAM_STANDBY", "CAM_VIO", "CAM_VANA", "CAM_VDIG";
+		qcom,cam-power-seq-type = "sensor_gpio", "sensor_gpio", "sensor_gpio", "sensor_gpio", "sensor_clk";
+		qcom,cam-power-seq-val = "sensor_gpio_vio", "sensor_gpio_vana", "sensor_gpio_vdig", "sensor_gpio_standby", "sensor_cam_mclk";
 		qcom,cam-power-seq-cfg-val = <1 1 1 1 24000000>;
 		qcom,cam-power-seq-delay = <5 5 10 10 20>;
 	};
@@ -208,7 +183,7 @@
 		qcom,slave-id = <0x6c 0x0 0x1c21>;
 		qcom,csiphy-sd-index = <0>;
 		qcom,csid-sd-index = <0>;
-		qcom,actuator-src = <&actuator1>;
+		qcom,actuator-src = <&actuator0>;
 		qcom,led-flash-src = <&led_flash0>;
 		qcom,eeprom-src = <&eeprom1>;
 		qcom,mount-angle = <90>;
@@ -236,11 +211,7 @@
 		qcom,gpio-vdig = <4>;
 		qcom,gpio-req-tbl-num = <0 1 2 3 4>;
 		qcom,gpio-req-tbl-flags = <1 0 0 0 0>;
-		qcom,gpio-req-tbl-label = "CAMIF_MCLK",
-			"CAM_STANDBY",
-			"CAM_VIO",
-			"CAM_VANA",
-			"CAM_VDIG";
+		qcom,gpio-req-tbl-label = "CAMIF_MCLK", "CAM_STANDBY", "CAM_VIO", "CAM_VANA", "CAM_VDIG";
 		qcom,csi-lane-assign = <0x4320>;
 		qcom,csi-lane-mask = <0x1f>;
 		qcom,sensor-position = <0>;
@@ -249,6 +220,13 @@
 	};
 
 	/* ------ AUX camera block -------- */
+/*
+	actuator1: qcom,actuator@36 {
+		cell-index = <1>;
+		reg = <0x36>;
+		compatible = "qcom,actuator";
+		qcom,cci-master = <0>;
+	};
 
 	qcom,camera@6d {
 		compatible = "qcom,ov2720";
@@ -395,4 +373,5 @@
 		qcom,cci-master = <0>;
 		status = "ok";
 	};
+*/
 };
