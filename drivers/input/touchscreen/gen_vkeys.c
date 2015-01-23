@@ -125,8 +125,11 @@ static int __devinit vkey_parse_dt(struct device *dev,
 static int __devinit vkeys_probe(struct platform_device *pdev)
 {
 	struct vkeys_platform_data *pdata;
+	int ret = 0;
+#ifndef CONFIG_JSR_RMI4_VIRTUAL_KEY_SUPPORT
 	int width, height, center_x, center_y;
-	int x1 = 0, x2 = 0, i, c = 0, ret, border;
+	int x1 = 0, x2 = 0, i, c = 0, border;
+#endif
 	char *name;
 
 	vkey_buf = devm_kzalloc(&pdev->dev, MAX_BUF_SIZE, GFP_KERNEL);
