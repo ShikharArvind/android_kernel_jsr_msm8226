@@ -18,8 +18,8 @@
  * GNU General Public License for more details.
  */
 
-#undef CONFIG_DYNAMIC_DEBUG
-#define DEBUG
+/* #undef CONFIG_DYNAMIC_DEBUG */
+/* #define DEBUG */
  
 #include <linux/kernel.h>
 #include <linux/module.h>
