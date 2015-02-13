@@ -21,7 +21,7 @@ No other optional properties for it.
 Example:
 
 	flashlight {
-		compatible = "leds-gpio-flash";
+		compatible = "qcom,leds-gpio-flash";
 		status = "okay";
 		qcom,flash-en = <&msmgpio 18 0>;
 		qcom,flash-now = <&msmgpio 19 0>;
