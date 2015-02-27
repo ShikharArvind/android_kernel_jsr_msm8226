@@ -27,3 +27,7 @@
 &dsi_nt35590_720_vid {
 	qcom,cont-splash-enabled;
 };
+
+&dsi_nt35521_720_vid {
+	qcom,cont-splash-enabled;
+};
