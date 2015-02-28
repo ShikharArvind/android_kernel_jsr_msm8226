@@ -259,13 +259,13 @@ static int32_t msm_sensor_get_dt_vreg_data(struct device_node *of_node,
 	struct msm_camera_sensor_board_info *sensordata)
 {
 	int32_t rc = 0, i = 0;
-	uint32_t count = 0;
+	int32_t count = 0;
 	uint32_t *vreg_array = NULL;
 
 	count = of_property_count_strings(of_node, "qcom,cam-vreg-name");
 	CDBG("%s qcom,cam-vreg-name count %d\n", __func__, count);
 
-	if (!count)
+	if (count <= 0)
 		return 0;
 
 	sensordata->cam_vreg = kzalloc(sizeof(struct camera_vreg_t) * count,
