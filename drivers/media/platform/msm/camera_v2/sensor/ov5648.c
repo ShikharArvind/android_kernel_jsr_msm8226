@@ -155,16 +155,18 @@ static int32_t ov5648_platform_probe(struct platform_device *pdev)
 static int __init ov5648_init_module(void)
 {
 	int32_t rc = 0;
-
+	pr_info("%s:%d\n", __func__, __LINE__);
 	rc = platform_driver_probe(&ov5648_platform_driver,
 		ov5648_platform_probe);
 	if (!rc)
 		return rc;
+	pr_err("%s:%d rc %d\n", __func__, __LINE__, rc);
 	return i2c_add_driver(&ov5648_i2c_driver);
 }
 
 static void __exit ov5648_exit_module(void)
 {
+	pr_info("%s:%d\n", __func__, __LINE__);
 	if (ov5648_s_ctrl.pdev) {
 		msm_sensor_free_sensor_data(&ov5648_s_ctrl);
 		platform_driver_unregister(&ov5648_platform_driver);
