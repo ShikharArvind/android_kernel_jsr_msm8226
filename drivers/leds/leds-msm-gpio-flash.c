@@ -20,6 +20,7 @@
 #include <linux/gpio.h>
 #include <linux/of.h>
 #include <linux/printk.h>
+#include <linux/wakelock.h>
 
 #define LED_GPIO_FLASH_DRIVER_NAME	"qcom,leds-gpio-flash"
 #define LED_TRIGGER_DEFAULT		"none"
@@ -30,7 +31,7 @@ struct led_gpio_flash_data {
 	int brightness;
 #ifdef CONFIG_JSR_TORCH_WAKE_LOCK	
 	int reserved1;     // unknown JSR param
-	struct wakeup_source torch_wake_lock;  // offset = 0x10
+	struct wake_lock torch_wake_lock;  // offset = 0x10
 #endif
 	struct led_classdev cdev;         // offset = 0x10 + 0x98 = 0xA8
 };
@@ -134,8 +135,7 @@ int __devinit led_gpio_flash_probe(struct platform_device *pdev)
 		flash_led->cdev.default_trigger = temp_str;
 
 #ifdef CONFIG_JSR_TORCH_WAKE_LOCK	
-	wakeup_source_prepare(&flash_led->torch_wake_lock, "torch_wake_lock");
-	wakeup_source_add(&flash_led->torch_wake_lock);
+	wake_lock_init(&flash_led->torch_wake_lock, WAKE_LOCK_SUSPEND, "torch_wake_lock");
 #endif
 	
 	flash_led->flash_en = of_get_named_gpio(node, "qcom,flash-en", 0);
@@ -202,8 +202,7 @@ int __devinit led_gpio_flash_probe(struct platform_device *pdev)
 
 error:
 #ifdef CONFIG_JSR_TORCH_WAKE_LOCK	
-	wakeup_source_remove(&flash_led->torch_wake_lock);
-	wakeup_source_drop(&flash_led->torch_wake_lock);
+	wake_lock_destroy(&flash_led->torch_wake_lock);
 #endif
 	devm_kfree(&pdev->dev, flash_led);
 	return rc;
@@ -215,8 +214,7 @@ int __devexit led_gpio_flash_remove(struct platform_device *pdev)
 	    (struct led_gpio_flash_data *)platform_get_drvdata(pdev);
 
 #ifdef CONFIG_JSR_TORCH_WAKE_LOCK	
-	wakeup_source_remove(&flash_led->torch_wake_lock);
-	wakeup_source_drop(&flash_led->torch_wake_lock);
+	wake_lock_destroy(&flash_led->torch_wake_lock);
 #endif
 	led_classdev_unregister(&flash_led->cdev);
 	devm_kfree(&pdev->dev, flash_led);
