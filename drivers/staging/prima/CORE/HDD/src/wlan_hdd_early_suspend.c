@@ -1159,8 +1159,7 @@ static void hdd_PowerStateChangedCB
        * resume request will be lost. So reconfigure the filters on detecting
        * a change in the power state of the WCN chip.
        */
-      spin_unlock(&pHddCtx->filter_lock);
-			if (IMPS != newState)
+      if (IMPS != newState)
       {
            if (FALSE == pHddCtx->hdd_wlan_suspended)
            {
@@ -1168,7 +1167,8 @@ static void hdd_PowerStateChangedCB
                           "Not in IMPS/BMPS and suspended state");
                 hdd_conf_mcastbcast_filter(pHddCtx, FALSE);
            }
-      }      
+      }
+      spin_unlock(&pHddCtx->filter_lock);
    }
 }
 
