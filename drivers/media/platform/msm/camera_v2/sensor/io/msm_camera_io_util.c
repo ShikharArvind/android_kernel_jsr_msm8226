@@ -23,9 +23,13 @@
 
 #define BUFF_SIZE_128 128
 
+#ifndef CONFIG_MSMB_CAMERA_DEBUG
+#define CONFIG_MSMB_CAMERA_DEBUG
+#endif
+
 #undef CDBG
 #ifdef CONFIG_MSMB_CAMERA_DEBUG
-#define CDBG(fmt, args...) pr_debug(fmt, ##args)
+#define CDBG(fmt, args...) pr_err(fmt, ##args)
 #else
 #define CDBG(fmt, args...) do { } while (0)
 #endif

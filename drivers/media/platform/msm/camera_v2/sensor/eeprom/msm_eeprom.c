@@ -18,6 +18,10 @@
 #include "msm_cci.h"
 #include "msm_eeprom.h"
 
+#ifndef MSM_EEPROM_DEBUG
+#define MSM_EEPROM_DEBUG
+#endif
+
 #undef CDBG
 #ifdef MSM_EEPROM_DEBUG
 #define CDBG(fmt, args...) pr_err(fmt, ##args)

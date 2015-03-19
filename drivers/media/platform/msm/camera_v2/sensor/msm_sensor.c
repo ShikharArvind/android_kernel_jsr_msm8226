@@ -20,7 +20,10 @@
 #include <mach/rpm-regulator-smd.h>
 #include <linux/regulator/consumer.h>
 
-/*#define CONFIG_MSMB_CAMERA_DEBUG*/
+#ifndef CONFIG_MSMB_CAMERA_DEBUG
+#define CONFIG_MSMB_CAMERA_DEBUG
+#endif
+
 #undef CDBG
 #ifdef CONFIG_MSMB_CAMERA_DEBUG
 #define CDBG(fmt, args...) pr_err(fmt, ##args)
@@ -585,6 +588,8 @@ static int msm_sensor_get_af_status(struct msm_sensor_ctrl_t *s_ctrl,
 	return 0;
 }
 
+static int logioctl = 0;
+
 static long msm_sensor_subdev_ioctl(struct v4l2_subdev *sd,
 			unsigned int cmd, void *arg)
 {
@@ -594,6 +599,14 @@ static long msm_sensor_subdev_ioctl(struct v4l2_subdev *sd,
 		pr_err("%s s_ctrl NULL\n", __func__);
 		return -EBADF;
 	}
+	if (!logioctl) {
+	  logioctl = 1;
+		pr_err("%s: VIDIOC_MSM_SENSOR_CFG           = %08x \n", __func__, VIDIOC_MSM_SENSOR_CFG);
+		pr_err("%s: VIDIOC_MSM_SENSOR_GET_AF_STATUS = %08x \n", __func__, VIDIOC_MSM_SENSOR_GET_AF_STATUS);
+		pr_err("%s: VIDIOC_MSM_SENSOR_RELEASE       = %08x \n", __func__, VIDIOC_MSM_SENSOR_RELEASE);
+		pr_err("%s: MSM_SD_SHUTDOWN                 = %08x \n", __func__, MSM_SD_SHUTDOWN);
+	}
+	pr_err("%s: cmd %08x s_ctrl %p argp %p (arg %08x) \n", __func__, cmd, s_ctrl, argp, argp ? *(int *)argp : 0);
 	switch (cmd) {
 	case VIDIOC_MSM_SENSOR_CFG:
 		return s_ctrl->func_tbl->sensor_config(s_ctrl, argp);
@@ -615,8 +628,8 @@ int msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 	long rc = 0;
 	int i = 0;
 	mutex_lock(s_ctrl->msm_sensor_mutex);
-	CDBG("%s:%d %s cfgtype = %d\n", __func__, __LINE__,
-		s_ctrl->sensordata->sensor_name, cdata->cfgtype);
+	CDBG("%s: '%s' cfgtype = %d, sensor state = %d\n", __func__, 
+	  s_ctrl->sensordata->sensor_name, cdata->cfgtype, s_ctrl->sensor_state);
 	switch (cdata->cfgtype) {
 	case CFG_GET_SENSOR_INFO:
 		memcpy(cdata->cfg.sensor_info.sensor_name,
@@ -1090,6 +1103,7 @@ int msm_sensor_config(struct msm_sensor_ctrl_t *s_ctrl, void __user *argp)
 		break;
 	}
 	default:
+		pr_err("%s: invalid cfgtype = %d \n", __func__, cdata->cfgtype);
 		rc = -EFAULT;
 		break;
 	}

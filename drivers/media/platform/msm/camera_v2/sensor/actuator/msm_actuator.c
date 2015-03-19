@@ -19,7 +19,10 @@
 
 DEFINE_MSM_MUTEX(msm_actuator_mutex);
 
-/*#define MSM_ACUTUATOR_DEBUG*/
+#ifndef MSM_ACUTUATOR_DEBUG
+#define MSM_ACUTUATOR_DEBUG
+#endif
+
 #undef CDBG
 #ifdef MSM_ACUTUATOR_DEBUG
 #define CDBG(fmt, args...) pr_err(fmt, ##args)
@@ -821,22 +824,33 @@ static const struct v4l2_subdev_internal_ops msm_actuator_internal_ops = {
 	.close = msm_actuator_close,
 };
 
+static int logioctl = 0;
+
 static long msm_actuator_subdev_ioctl(struct v4l2_subdev *sd,
 			unsigned int cmd, void *arg)
 {
 	struct msm_actuator_ctrl_t *a_ctrl = v4l2_get_subdevdata(sd);
 	void __user *argp = (void __user *)arg;
-	CDBG("Enter\n");
-	CDBG("%s:%d a_ctrl %p argp %p\n", __func__, __LINE__, a_ctrl, argp);
+	if (!logioctl) {
+	  logioctl = 1;
+		pr_err("%s: VIDIOC_MSM_SENSOR_GET_SUBDEV_ID = %08x \n", __func__, VIDIOC_MSM_SENSOR_GET_SUBDEV_ID);
+		pr_err("%s: VIDIOC_MSM_ACTUATOR_CFG         = %08x \n", __func__, VIDIOC_MSM_ACTUATOR_CFG);
+		pr_err("%s: MSM_SD_SHUTDOWN                 = %08x \n", __func__, MSM_SD_SHUTDOWN);
+	}
+	pr_err("%s: cmd %08x a_ctrl %p argp %p (arg %08x) \n", __func__, cmd, a_ctrl, argp, argp ? *(int *)argp : 0);
 	switch (cmd) {
 	case VIDIOC_MSM_SENSOR_GET_SUBDEV_ID:
+		pr_err("%s: VIDIOC_MSM_SENSOR_GET_SUBDEV_ID \n", __func__);
 		return msm_actuator_get_subdev_id(a_ctrl, argp);
 	case VIDIOC_MSM_ACTUATOR_CFG:
+		pr_err("%s: VIDIOC_MSM_ACTUATOR_CFG \n", __func__);
 		return msm_actuator_config(a_ctrl, argp);
 	case MSM_SD_SHUTDOWN:
+		pr_err("%s: MSM_SD_SHUTDOWN \n", __func__);
 		msm_actuator_close(sd, NULL);
 		return 0;
 	default:
+		pr_err("%s: invalid IOCTL %08x !\n", __func__, cmd);
 		return -ENOIOCTLCMD;
 	}
 }

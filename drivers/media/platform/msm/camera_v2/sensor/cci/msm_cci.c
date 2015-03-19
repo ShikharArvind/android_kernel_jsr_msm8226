@@ -34,9 +34,13 @@
 /* TODO move this somewhere else */
 #define MSM_CCI_DRV_NAME "msm_cci"
 
+#ifndef CONFIG_MSMB_CAMERA_DEBUG
+#define CONFIG_MSMB_CAMERA_DEBUG
+#endif
+
 #undef CDBG
 #ifdef CONFIG_MSMB_CAMERA_DEBUG
-#define CDBG(fmt, args...) pr_debug(fmt, ##args)
+#define CDBG(fmt, args...) pr_err(fmt, ##args)
 #else
 #define CDBG(fmt, args...) do { } while (0)
 #endif

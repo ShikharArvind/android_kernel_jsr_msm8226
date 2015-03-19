@@ -15,13 +15,18 @@
 
 #include "msm_led_flash.h"
 
-/*#define CONFIG_MSMB_CAMERA_DEBUG*/
+#ifndef CONFIG_MSMB_CAMERA_DEBUG
+#define CONFIG_MSMB_CAMERA_DEBUG
+#endif
+
 #undef CDBG
 #ifdef CONFIG_MSMB_CAMERA_DEBUG
 #define CDBG(fmt, args...) pr_err(fmt, ##args)
 #else
 #define CDBG(fmt, args...) do { } while (0)
 #endif
+
+static int logioctl = 0;
 
 static long msm_led_flash_subdev_ioctl(struct v4l2_subdev *sd,
 	unsigned int cmd, void *arg)
@@ -37,6 +42,13 @@ static long msm_led_flash_subdev_ioctl(struct v4l2_subdev *sd,
 		pr_err("fctrl NULL\n");
 		return -EINVAL;
 	}
+	if (!logioctl) {
+	  logioctl = 1;
+		pr_err("%s: VIDIOC_MSM_SENSOR_GET_SUBDEV_ID = %08x \n", __func__, VIDIOC_MSM_SENSOR_GET_SUBDEV_ID);
+		pr_err("%s: VIDIOC_MSM_FLASH_LED_DATA_CFG   = %08x \n", __func__, VIDIOC_MSM_FLASH_LED_DATA_CFG);
+		pr_err("%s: MSM_SD_SHUTDOWN                 = %08x \n", __func__, MSM_SD_SHUTDOWN);
+	}
+	pr_err("%s: cmd %08x fctrl %p argp %p (arg %08x) \n", __func__, cmd, fctrl, argp, argp ? *(int *)argp : 0);
 	switch (cmd) {
 	case VIDIOC_MSM_SENSOR_GET_SUBDEV_ID:
 		return fctrl->func_tbl->flash_get_subdev_id(fctrl, argp);
@@ -46,7 +58,7 @@ static long msm_led_flash_subdev_ioctl(struct v4l2_subdev *sd,
 		*(int *)argp = MSM_CAMERA_LED_RELEASE;
 		return fctrl->func_tbl->flash_led_config(fctrl, argp);
 	default:
-		pr_err_ratelimited("invalid cmd %d\n", cmd);
+		pr_err("%s: invalid IOCTL %08x \n", __func__, cmd);
 		return -ENOIOCTLCMD;
 	}
 }
