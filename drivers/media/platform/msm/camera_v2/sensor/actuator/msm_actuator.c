@@ -255,7 +255,7 @@ static int32_t msm_actuator_move_focus(
 	struct msm_camera_i2c_reg_setting reg_setting;
 
 	curr_lens_pos = a_ctrl->step_position_table[a_ctrl->curr_step_pos];
-	move_params->curr_lens_pos = curr_lens_pos;
+	//move_params->curr_lens_pos = curr_lens_pos;
 
 	if (copy_from_user(&ringing_params_kernel,
 		&(move_params->ringing_params[a_ctrl->curr_region_index]),
@@ -307,7 +307,7 @@ static int32_t msm_actuator_move_focus(
 		a_ctrl->curr_step_pos = target_step_pos;
 	}
 
-	move_params->curr_lens_pos = curr_lens_pos;
+	//move_params->curr_lens_pos = curr_lens_pos;
 	reg_setting.reg_setting = a_ctrl->i2c_reg_tbl;
 	reg_setting.data_type = a_ctrl->i2c_data_type;
 	reg_setting.size = a_ctrl->i2c_tbl_index;
@@ -603,9 +603,9 @@ static int32_t msm_actuator_config(struct msm_actuator_ctrl_t *a_ctrl,
 		break;
 
 	case CFG_SET_POSITION:
-		rc = a_ctrl->func_tbl->actuator_set_position(a_ctrl,
-			&cdata->cfg.setpos);
-		if (rc < 0)
+		//rc = a_ctrl->func_tbl->actuator_set_position(a_ctrl,
+		//	&cdata->cfg.setpos);
+		//if (rc < 0)
 			pr_err("actuator_set_position failed %d\n", rc);
 		break;
 	default:
@@ -962,7 +962,7 @@ static struct msm_actuator msm_vcm_actuator_table = {
 		.actuator_set_default_focus = msm_actuator_set_default_focus,
 		.actuator_init_focus = msm_actuator_init_focus,
 		.actuator_parse_i2c_params = msm_actuator_parse_i2c_params,
-		.actuator_set_position = msm_actuator_set_position,
+		//.actuator_set_position = msm_actuator_set_position,
 	},
 };
 
