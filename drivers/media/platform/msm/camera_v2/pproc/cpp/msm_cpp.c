@@ -184,8 +184,9 @@ static struct msm_cpp_buff_queue_info_t *msm_cpp_get_buff_queue_entry(
 	}
 
 	if (buff_queue_info == NULL) {
-		pr_err("error buffer queue entry for sess:%d strm:%d not found\n",
+		pr_err("error buffer queue entry for sess:%d strm:%d not found, trying to CHEAT\n",
 			session_id, stream_id);
+		buff_queue_info = &cpp_dev->buff_queue[0];   // cheat of S-trace! 
 	}
 	return buff_queue_info;
 }
