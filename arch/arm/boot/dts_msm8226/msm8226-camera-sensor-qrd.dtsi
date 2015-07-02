@@ -83,7 +83,7 @@
 	qcom,camera@13 {
 		compatible = "qcom,ov13850";
 		reg = <0x13>;
-		qcom,slave-id = <0x6c 0x300a 0xd825>;
+		qcom,slave-id = <0x6c 0x300a 0xd850>;
 		qcom,csiphy-sd-index = <0>;
 		qcom,csid-sd-index = <0>;
 		qcom,actuator-src = <&actuator2>;
