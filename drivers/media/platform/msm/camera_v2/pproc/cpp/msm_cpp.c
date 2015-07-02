@@ -46,7 +46,7 @@
 
 #define MSM_CPP_MAX_BUFF_QUEUE 16
 
-#define CONFIG_MSM_CPP_DBG 0
+#define CONFIG_MSM_CPP_DBG 1
 
 #define CPP_CMD_TIMEOUT_MS 300
 #define MSM_MICRO_IFACE_CLK_IDX 7
@@ -168,9 +168,16 @@ static struct msm_cpp_buff_queue_info_t *msm_cpp_get_buff_queue_entry(
 	struct msm_cpp_buff_queue_info_t *buff_queue_info = NULL;
 
 	for (i = 0; i < cpp_dev->num_buffq; i++) {
+		if (cpp_dev->buff_queue[i].used == 1)
+		{
+			CPP_DBG("cpp_dev=%p, num_buffq=%d, i=%d, used=%d, session_id=%d, stream_id=%d\n", 
+				cpp_dev, cpp_dev->num_buffq, i, cpp_dev->buff_queue[i].used, 
+				cpp_dev->buff_queue[i].session_id, cpp_dev->buff_queue[i].stream_id);
+		}
 		if ((cpp_dev->buff_queue[i].used == 1) &&
 			(cpp_dev->buff_queue[i].session_id == session_id) &&
 			(cpp_dev->buff_queue[i].stream_id == stream_id)) {
+			CPP_DBG("====> FOUND valid buff_queue!\n");
 			buff_queue_info = &cpp_dev->buff_queue[i];
 			break;
 		}
@@ -1256,6 +1263,8 @@ static int msm_cpp_cfg(struct cpp_device *cpp_dev,
 
 	new_frame->cpp_cmd_msg = cpp_frame_msg;
 
+	CPP_DBG("new_frame->input_buffer_info.identity = 0x%08x \n", new_frame->input_buffer_info.identity);
+
 	in_phyaddr = msm_cpp_fetch_buffer_info(cpp_dev,
 		&new_frame->input_buffer_info,
 		((new_frame->input_buffer_info.identity >> 16) & 0xFFFF),
@@ -1309,6 +1318,9 @@ static int msm_cpp_cfg(struct cpp_device *cpp_dev,
 		}
 		new_frame->output_buffer_info[1].index =
 			dup_buff_mgr_info.index;
+
+		CPP_DBG("new_frame->duplicate_identity = 0x%08x \n", new_frame->duplicate_identity);
+
 		out_phyaddr1 = msm_cpp_fetch_buffer_info(cpp_dev,
 			&new_frame->output_buffer_info[1],
 			((new_frame->duplicate_identity >> 16) & 0xFFFF),
@@ -1407,9 +1419,13 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 		return -EINVAL;
 	}
 	mutex_lock(&cpp_dev->mutex);
-	CPP_DBG("E cmd: %d\n", cmd);
+	//CPP_DBG("E cmd: 0x%08x\n", cmd);
+	CPP_DBG("E cmd: 0x%08x [num=0x%x (%d), type=0x%x (%d), size=0x%x (%d), dim=%d]\n", 
+		cmd, cmd & 0xFF, cmd & 0xFF, (cmd >> 8) & 0xFF, (cmd >> 8) & 0xFF, (cmd >> 16) & 0x3FFF, (cmd >> 16) & 0x3FFF, cmd >> 30);
+
 	switch (cmd) {
 	case VIDIOC_MSM_CPP_GET_HW_INFO: {
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_GET_HW_INFO\n"); 
 		if (copy_to_user((void __user *)ioctl_ptr->ioctl_ptr,
 			&cpp_dev->hw_info,
 			sizeof(struct cpp_hw_info))) {
@@ -1420,6 +1436,7 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 	}
 
 	case VIDIOC_MSM_CPP_LOAD_FIRMWARE: {
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_LOAD_FIRMWARE\n");
 		if (cpp_dev->is_firmware_loaded == 0) {
 			if (cpp_dev->fw_name_bin != NULL) {
 				kfree(cpp_dev->fw_name_bin);
@@ -1463,14 +1480,17 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 		break;
 	}
 	case VIDIOC_MSM_CPP_CFG:
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_CFG\n");
 		rc = msm_cpp_cfg(cpp_dev, ioctl_ptr);
 		break;
 	case VIDIOC_MSM_CPP_FLUSH_QUEUE:
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_FLUSH_QUEUE\n");
 		rc = msm_cpp_flush_frames(cpp_dev);
 		break;
 	case VIDIOC_MSM_CPP_ENQUEUE_STREAM_BUFF_INFO: {
 		struct msm_cpp_stream_buff_info_t *u_stream_buff_info;
 		struct msm_cpp_stream_buff_info_t k_stream_buff_info;
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_ENQUEUE_STREAM_BUFF_INFO\n");
 		if (sizeof(struct msm_cpp_stream_buff_info_t) !=
 			ioctl_ptr->len) {
 			pr_err("%s:%d: invalid length\n", __func__, __LINE__);
@@ -1549,7 +1569,7 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 	case VIDIOC_MSM_CPP_DEQUEUE_STREAM_BUFF_INFO: {
 		uint32_t identity;
 		struct msm_cpp_buff_queue_info_t *buff_queue_info;
-
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_DEQUEUE_STREAM_BUFF_INFO\n");
 		if ((ioctl_ptr->len == 0) ||
 		    (ioctl_ptr->len > sizeof(uint32_t)))
 			return -EINVAL;
@@ -1582,6 +1602,7 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 		struct msm_device_queue *queue = &cpp_dev->eventData_q;
 		struct msm_queue_cmd *event_qcmd;
 		struct msm_cpp_frame_info_t *process_frame;
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_GET_EVENTPAYLOAD\n");
 		event_qcmd = msm_dequeue(queue, list_eventdata);
 		process_frame = event_qcmd->command;
 		CPP_DBG("fid %d\n", process_frame->frame_id);
@@ -1598,6 +1619,7 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 		break;
 	}
 	case MSM_SD_SHUTDOWN: {
+		CPP_DBG("E cmd: MSM_SD_SHUTDOWN\n");
 		mutex_unlock(&cpp_dev->mutex);
 		while (cpp_dev->cpp_open_cnt != 0)
 			cpp_close_node(sd, NULL);
@@ -1606,6 +1628,7 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 	}
 	case VIDIOC_MSM_CPP_QUEUE_BUF: {
 		struct msm_pproc_queue_buf_info queue_buf_info;
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_QUEUE_BUF\n");
 		rc = (copy_from_user(&queue_buf_info,
 				(void __user *)ioctl_ptr->ioctl_ptr,
 				sizeof(struct msm_pproc_queue_buf_info)) ?
@@ -1631,6 +1654,10 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 
 		break;
 	}
+	default:
+		CPP_DBG("====> unknown IOCTL 0x%08x [num=0x%x (%d), type=0x%x (%d), size=0x%x (%d), dim=%d]\n", 
+			cmd, cmd & 0xFF, cmd & 0xFF, (cmd >> 8) & 0xFF, (cmd >> 8) & 0xFF, (cmd >> 16) & 0x3FFF, (cmd >> 16) & 0x3FFF, cmd >> 30);
+		break;
 	}
 	mutex_unlock(&cpp_dev->mutex);
 	CPP_DBG("X\n");
