@@ -71,7 +71,7 @@ static struct memtype_reserve msm8226_reserve_table[] __initdata = {
 #define JSR_PERSISTENT_RAM_ADDR   0x7F100000
 #define JSR_PERSISTENT_RAM_SIZE   0x00100000
 //#define JSR_PERSISTENT_RAM_SIZE   0x00200000
-#define JSR_RAM_CONSOLE_SIZE     (128 * SZ_1K * 2)
+#define JSR_RAM_CONSOLE_SIZE     (512 * SZ_1K * 2)
 
 #ifdef CONFIG_ANDROID_RAM_CONSOLE
 static struct platform_device ram_console_device = {
