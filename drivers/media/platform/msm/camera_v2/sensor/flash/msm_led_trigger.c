@@ -71,14 +71,14 @@ static int32_t msm_led_trigger_config(struct msm_led_flash_ctrl_t *fctrl,
 	case MSM_CAMERA_LED_LOW:
 		if (fctrl->torch_trigger) {
 			max_curr_l = fctrl->torch_max_current;
-			if (cfg->torch_current > 0 &&
-					cfg->torch_current < max_curr_l) {
-				curr_l = cfg->torch_current;
-			} else {
+			//if (cfg->torch_current > 0 &&
+			//		cfg->torch_current < max_curr_l) {
+			//	curr_l = cfg->torch_current;
+			//} else {
 				curr_l = fctrl->torch_op_current;
-				pr_err("LED current clamped to %d\n",
-					curr_l);
-			}
+			//	pr_err("LED current clamped to %d\n",
+			//		curr_l);
+			//}
 			led_trigger_event(fctrl->torch_trigger,
 				curr_l);
 		}
@@ -90,14 +90,14 @@ static int32_t msm_led_trigger_config(struct msm_led_flash_ctrl_t *fctrl,
 		for (i = 0; i < fctrl->num_sources; i++)
 			if (fctrl->flash_trigger[i]) {
 				max_curr_l = fctrl->flash_max_current[i];
-				if (cfg->flash_current[i] > 0 &&
-						cfg->flash_current[i] < max_curr_l) {
-					curr_l = cfg->flash_current[i];
-				} else {
+				//if (cfg->flash_current[i] > 0 &&
+				//		cfg->flash_current[i] < max_curr_l) {
+				//	curr_l = cfg->flash_current[i];
+				//} else {
 					curr_l = fctrl->flash_op_current[i];
-					pr_err("LED current clamped to %d\n",
-						curr_l);
-				}
+				//	pr_err("LED current clamped to %d\n",
+				//		curr_l);
+				//}
 				led_trigger_event(fctrl->flash_trigger[i],
 					curr_l);
 			}
@@ -202,9 +202,9 @@ static int32_t msm_led_trigger_probe(struct platform_device *pdev)
 				rc = of_property_read_u32(flash_src_node,
 					"qcom,current",
 					&fctrl.flash_op_current[i]);
-				rc_1 = of_property_read_u32(flash_src_node,
-					"qcom,max-current",
-					&fctrl.flash_max_current[i]);
+				//rc_1 = of_property_read_u32(flash_src_node,
+				//	"qcom,max-current",
+				//	&fctrl.flash_max_current[i]);
 				if ((rc < 0) || (rc_1 < 0)) {
 					pr_err("current: read failed\n");
 					of_node_put(flash_src_node);
@@ -253,9 +253,9 @@ static int32_t msm_led_trigger_probe(struct platform_device *pdev)
 				rc = of_property_read_u32(flash_src_node,
 					"qcom,current",
 					&fctrl.torch_op_current);
-				rc_1 = of_property_read_u32(flash_src_node,
-					"qcom,max-current",
-					&fctrl.torch_max_current);
+				//rc_1 = of_property_read_u32(flash_src_node,
+				//	"qcom,max-current",
+				//	&fctrl.torch_max_current);
 
 				if ((rc < 0) || (rc_1 < 0)) {
 					pr_err("current: read failed\n");
