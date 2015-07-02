@@ -962,7 +962,7 @@ static struct msm_actuator msm_vcm_actuator_table = {
 		.actuator_set_default_focus = msm_actuator_set_default_focus,
 		.actuator_init_focus = msm_actuator_init_focus,
 		.actuator_parse_i2c_params = msm_actuator_parse_i2c_params,
-		//.actuator_set_position = msm_actuator_set_position,
+		.actuator_set_position = msm_actuator_set_position,
 	},
 };
 
