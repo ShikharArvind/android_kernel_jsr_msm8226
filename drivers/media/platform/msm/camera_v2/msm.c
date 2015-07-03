@@ -719,6 +719,10 @@ int msm_post_event(struct v4l2_event *event, int timeout)
 		wait_count--;
 	} while (wait_count > 0);
 
+	/* should wait on session based condition */
+	//rc = wait_for_completion_timeout(&cmd_ack->wait_complete,
+	//		msecs_to_jiffies(timeout));
+  
 	if (list_empty_careful(&cmd_ack->command_q.list)) {
 		if (!rc) {
 			pr_err("%s: Timed out for cmd = %d\n", __func__,
@@ -732,7 +736,7 @@ int msm_post_event(struct v4l2_event *event, int timeout)
 			return rc;
 		}
 	}
-
+  
 	cmd = msm_dequeue(&cmd_ack->command_q,
 		struct msm_command, list);
 	if (!cmd) {

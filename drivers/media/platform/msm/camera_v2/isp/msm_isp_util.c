@@ -1052,6 +1052,15 @@ void msm_isp_do_tasklet(unsigned long data)
 		irq_status1 = queue_cmd->vfeInterruptStatus1;
 		ts = queue_cmd->ts;
 		spin_unlock_irqrestore(&vfe_dev->tasklet_lock, flags);
+		/*
+		if (atomic_read(&vfe_dev->error_info.overflow_state) !=
+			NO_OVERFLOW) {
+			pr_err("There is Overflow, kicking up recovery !!!!");
+			msm_isp_process_overflow_recovery(vfe_dev,
+				irq_status0, irq_status1);
+			continue;
+		}
+		*/
 		ISP_DBG("%s: status0: 0x%x status1: 0x%x\n",
 			__func__, irq_status0, irq_status1);
 		irq_ops->process_reset_irq(vfe_dev,

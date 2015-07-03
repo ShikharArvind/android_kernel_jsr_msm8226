@@ -167,26 +167,25 @@ static struct msm_cpp_buff_queue_info_t *msm_cpp_get_buff_queue_entry(
 	uint32_t i = 0;
 	struct msm_cpp_buff_queue_info_t *buff_queue_info = NULL;
 
+	CPP_DBG("session_id=%d, stream_id=%d, num_buffq=%d \n", session_id, stream_id, cpp_dev->num_buffq);
 	for (i = 0; i < cpp_dev->num_buffq; i++) {
-		if (cpp_dev->buff_queue[i].used == 1)
-		{
-			CPP_DBG("cpp_dev=%p, num_buffq=%d, i=%d, used=%d, session_id=%d, stream_id=%d\n", 
-				cpp_dev, cpp_dev->num_buffq, i, cpp_dev->buff_queue[i].used, 
-				cpp_dev->buff_queue[i].session_id, cpp_dev->buff_queue[i].stream_id);
+		if (cpp_dev->buff_queue[i].used == 1) {
+			//CPP_DBG("i=%d, session_id=%d, stream_id=%d\n", 
+			//	i, cpp_dev->buff_queue[i].session_id, cpp_dev->buff_queue[i].stream_id);
 		}
 		if ((cpp_dev->buff_queue[i].used == 1) &&
 			(cpp_dev->buff_queue[i].session_id == session_id) &&
 			(cpp_dev->buff_queue[i].stream_id == stream_id)) {
-			CPP_DBG("====> FOUND valid buff_queue!\n");
+			//CPP_DBG("====> FOUND valid buff_queue!\n");
 			buff_queue_info = &cpp_dev->buff_queue[i];
 			break;
 		}
 	}
 
 	if (buff_queue_info == NULL) {
-		pr_err("error buffer queue entry for sess:%d strm:%d not found, trying to CHEAT\n",
+		pr_err("====> ERROR: buffer queue entry for sess:%d strm:%d not found\n",
 			session_id, stream_id);
-		buff_queue_info = &cpp_dev->buff_queue[0];   // cheat of S-trace! 
+		//buff_queue_info = &cpp_dev->buff_queue[0];   // cheat of S-trace! 
 	}
 	return buff_queue_info;
 }
@@ -445,20 +444,27 @@ static void msm_cpp_delete_buff_queue(struct cpp_device *cpp_dev)
 	return;
 }
 
-static void msm_cpp_poll(void __iomem *cpp_base, u32 val)
+#undef  MSM_CPP_POLL_RETRIES
+#define MSM_CPP_POLL_RETRIES  60
+
+static void _msm_cpp_poll(void __iomem *cpp_base, u32 val)
 {
 	uint32_t tmp, retry = 0;
 	do {
 		usleep_range(1000, 2000);
 		tmp = msm_cpp_read(cpp_base);
-		if (tmp != 0xDEADBEEF)
-			CPP_DBG("poll: 0%x\n", tmp);
+		//if (tmp != 0xDEADBEEF) CPP_DBG("poll: 0%x\n", tmp);
 	} while ((tmp != val) && (retry++ < MSM_CPP_POLL_RETRIES));
-	if (retry < MSM_CPP_POLL_RETRIES)
-		CPP_DBG("Poll finished\n");
-	else
-		pr_err("Poll failed: expect: 0x%x\n", val);
+	if (retry < MSM_CPP_POLL_RETRIES) {
+		//CPP_DBG("Poll finished\n");
+	} else {
+		pr_err("===> ERROR: Poll failed: expect: 0x%x , readed = 0x%x \n", val, tmp);
+	}
 }
+
+#define msm_cpp_poll(_cpp_base, _val)    \
+CPP_DBG("msm_cpp_poll: cpp_base = %p, val = 0x%08x \n", _cpp_base, _val); \
+_msm_cpp_poll(_cpp_base, _val);
 
 void cpp_release_ion_client(struct kref *ref)
 {
@@ -1263,15 +1269,120 @@ static int msm_cpp_cfg(struct cpp_device *cpp_dev,
 	}
 
 	new_frame->cpp_cmd_msg = cpp_frame_msg;
+  /*
+  CPP_DBG("new_frame:\n");
+	CPP_DBG("  frame_id = 0x%x \n", new_frame->frame_id);
+	CPP_DBG("  timestamp:\n");
+	CPP_DBG("    tv_sec  = %ld\n", (long)new_frame->timestamp.tv_sec);
+	CPP_DBG("    tv_usec = %ld\n", (long)new_frame->timestamp.tv_usec);
+	CPP_DBG("  inst_id = 0x%x \n", new_frame->inst_id );
+	CPP_DBG("  identity = 0x%x \n", new_frame->identity );
+	CPP_DBG("  client_id = 0x%x \n", new_frame->client_id );
+	CPP_DBG("  frame_type = 0x%x \n", new_frame->frame_type );
+	CPP_DBG("  num_strips = 0x%x \n", new_frame->num_strips );
+	CPP_DBG("  strip_info: %p \n", new_frame->strip_info);
+	// CPP_DBG("    scale_v_en = %d \n", new_frame->strip_info->scale_v_en);
+	// CPP_DBG("    scale_h_en = %d \n", new_frame->strip_info->scale_h_en);
+	// CPP_DBG("    upscale_v_en = %d \n", new_frame->strip_info->upscale_v_en);
+	// CPP_DBG("    upscale_h_en = %d \n", new_frame->strip_info->upscale_h_en);
+	// CPP_DBG("    src_start_x = %d \n", new_frame->strip_info->src_start_x);
+	// CPP_DBG("    src_end_x = %d \n", new_frame->strip_info->src_end_x);
+	// CPP_DBG("    src_start_y = %d \n", new_frame->strip_info->src_start_y);
+	// CPP_DBG("    src_end_y = %d \n", new_frame->strip_info->src_end_y);
+	// CPP_DBG("    dst_start_x = %d \n", new_frame->strip_info->dst_start_x);
+	// CPP_DBG("    dst_end_x = %d \n", new_frame->strip_info->dst_end_x);
+	// CPP_DBG("    dst_start_y = %d \n", new_frame->strip_info->dst_start_y);
+	// CPP_DBG("    dst_end_y = %d \n", new_frame->strip_info->dst_end_y);
+	// CPP_DBG("    bytes_per_pixel = %d \n", new_frame->strip_info->bytes_per_pixel);
+	// CPP_DBG("    rotate_270 = %d \n", new_frame->strip_info->rotate_270);
+	// CPP_DBG("    horizontal_flip = %d \n", new_frame->strip_info->horizontal_flip);
+	// CPP_DBG("    vertical_flip = %d \n", new_frame->strip_info->vertical_flip);
+	// CPP_DBG("    scale_output_width = %d \n", new_frame->strip_info->scale_output_width);
+	// CPP_DBG("    scale_output_height = %d \n", new_frame->strip_info->scale_output_height);
 
-	CPP_DBG("new_frame->input_buffer_info.identity = 0x%08x \n", new_frame->input_buffer_info.identity);
+	CPP_DBG("  msg_len = 0x%x \n", new_frame->msg_len );
+	CPP_DBG("  cpp_cmd_msg = %p \n", new_frame->cpp_cmd_msg );
+	CPP_DBG("  src_fd = %d\n", new_frame->src_fd );
+	CPP_DBG("  dst_fd = %d\n", new_frame->dst_fd );
+
+	CPP_DBG("  src_ion_handle: %p \n", new_frame->src_ion_handle);
+	// CPP_DBG("    ref:\n");
+	// CPP_DBG("      ...\n");
+	// CPP_DBG("    client: %p \n", new_frame->src_ion_handle->client);
+	// CPP_DBG("      ...\n");
+	// CPP_DBG("    buffer: %p \n", new_frame->src_ion_handle->buffer);
+	// CPP_DBG("      ...\n");
+	// CPP_DBG("    node:\n");
+	// CPP_DBG("      ...\n");
+	// CPP_DBG("    kmap_cnt = 0x%x \n", new_frame->src_ion_handle->kmap_cnt);
+	// CPP_DBG("    id = 0x%x \n", new_frame->src_ion_handle->id);
+
+	CPP_DBG("  dest_ion_handle: %p \n", new_frame->dest_ion_handle);
+
+	CPP_DBG("  in_time:\n");
+	CPP_DBG("    tv_sec  = %ld\n", (long)new_frame->in_time.tv_sec);
+	CPP_DBG("    tv_usec = %ld\n", (long)new_frame->in_time.tv_usec);
+
+	CPP_DBG("  out_time:\n");
+	CPP_DBG("    tv_sec  = %ld\n", (long)new_frame->out_time.tv_sec);
+	CPP_DBG("    tv_usec = %ld\n", (long)new_frame->out_time.tv_usec);
+
+	CPP_DBG("  cookie = %p \n", new_frame->cookie );
+	CPP_DBG("  status = %p \n", new_frame->status );
+	CPP_DBG("  duplicate_output = 0x%x \n", new_frame->duplicate_output);
+	CPP_DBG("  duplicate_identity = 0x%x \n", new_frame->duplicate_identity);
+	
+	CPP_DBG("  input_buffer_info: \n");
+	CPP_DBG("    fd = 0x%x \n", new_frame->input_buffer_info.fd );
+	CPP_DBG("    index = 0x%x \n", new_frame->input_buffer_info.index );
+	CPP_DBG("    offset = 0x%x \n", new_frame->input_buffer_info.offset );
+	CPP_DBG("    native_buff = 0x%x \n", new_frame->input_buffer_info.native_buff );
+	CPP_DBG("    processed_divert = 0x%x \n", new_frame->input_buffer_info.processed_divert );
+	CPP_DBG("    identity = 0x%x \n", new_frame->input_buffer_info.identity );
+
+	CPP_DBG("  output_buffer_info[0]: \n");
+	CPP_DBG("    fd = 0x%x \n", new_frame->output_buffer_info[0].fd );
+	CPP_DBG("    index = 0x%x \n", new_frame->output_buffer_info[0].index );
+	CPP_DBG("    offset = 0x%x \n", new_frame->output_buffer_info[0].offset );
+	CPP_DBG("    native_buff = 0x%x \n", new_frame->output_buffer_info[0].native_buff );
+	CPP_DBG("    processed_divert = 0x%x \n", new_frame->output_buffer_info[0].processed_divert );
+	CPP_DBG("    identity = 0x%x \n", new_frame->output_buffer_info[0].identity );
+
+	CPP_DBG("  output_buffer_info[1]: \n");
+	CPP_DBG("    fd = 0x%x \n", new_frame->output_buffer_info[1].fd );
+	CPP_DBG("    index = 0x%x \n", new_frame->output_buffer_info[1].index );
+	CPP_DBG("    offset = 0x%x \n", new_frame->output_buffer_info[1].offset );
+	CPP_DBG("    native_buff = 0x%x \n", new_frame->output_buffer_info[1].native_buff );
+	CPP_DBG("    processed_divert = 0x%x \n", new_frame->output_buffer_info[1].processed_divert );
+	CPP_DBG("    identity = 0x%x \n", new_frame->output_buffer_info[1].identity );
+  */
+	/*
+	CPP_DBG("  frame_id = %d \n", new_frame->frame_id);
+	CPP_DBG("  inst_id = 0x%x \n", new_frame->inst_id );
+	CPP_DBG("  identity = 0x%x \n", new_frame->identity );
+	CPP_DBG("  client_id = 0x%x \n", new_frame->client_id );
+	CPP_DBG("  frame_type = 0x%x \n", new_frame->frame_type );
+	CPP_DBG("  msg_len = 0x%x \n", new_frame->msg_len );
+	CPP_DBG("  cpp_cmd_msg = %p \n", new_frame->cpp_cmd_msg );
+	CPP_DBG("  src_fd = %d \n", new_frame->src_fd );
+	CPP_DBG("  dst_fd = %d \n", new_frame->dst_fd );
+	CPP_DBG("  input_buffer_info: \n");
+	CPP_DBG("    fd = %d (0x%x) \n", new_frame->input_buffer_info.fd, new_frame->input_buffer_info.fd );
+	CPP_DBG("    index = %d \n", new_frame->input_buffer_info.index );
+	CPP_DBG("    offset = 0x%x \n", new_frame->input_buffer_info.offset );
+	CPP_DBG("    native_buff = 0x%x \n", new_frame->input_buffer_info.native_buff );
+	CPP_DBG("    processed_divert = 0x%x \n", new_frame->input_buffer_info.processed_divert );
+	CPP_DBG("    identity = 0x%x \n", new_frame->input_buffer_info.identity );
+	*/
+	CPP_DBG("in_phyaddr: new_frame->identity = 0x%08x \n", new_frame->identity);
 
 	in_phyaddr = msm_cpp_fetch_buffer_info(cpp_dev,
 		&new_frame->input_buffer_info,
-		((new_frame->input_buffer_info.identity >> 16) & 0xFFFF),
-		(new_frame->input_buffer_info.identity & 0xFFFF), &in_fd);
+		((new_frame->identity >> 16) & 0xFFFF),
+		(new_frame->identity & 0xFFFF), &in_fd);
+
 	if (!in_phyaddr) {
-		pr_err("error gettting input physical address\n");
+		pr_err("====> ERROR: gettting input physical address\n");
 		rc = -EINVAL;
 		goto ERROR2;
 	}
@@ -1287,6 +1398,9 @@ static int msm_cpp_cfg(struct cpp_device *cpp_dev,
 		goto ERROR2;
 	}
 	new_frame->output_buffer_info[0].index = buff_mgr_info.index;
+	
+	CPP_DBG("out_phyaddr0: new_frame->identity = 0x%08x \n", new_frame->identity);
+	
 	out_phyaddr0 = msm_cpp_fetch_buffer_info(cpp_dev,
 		&new_frame->output_buffer_info[0],
 		((new_frame->identity >> 16) & 0xFFFF),
@@ -1320,7 +1434,7 @@ static int msm_cpp_cfg(struct cpp_device *cpp_dev,
 		new_frame->output_buffer_info[1].index =
 			dup_buff_mgr_info.index;
 
-		CPP_DBG("new_frame->duplicate_identity = 0x%08x \n", new_frame->duplicate_identity);
+		CPP_DBG("out_phyaddr1: new_frame->duplicate_identity = 0x%08x \n", new_frame->duplicate_identity);
 
 		out_phyaddr1 = msm_cpp_fetch_buffer_info(cpp_dev,
 			&new_frame->output_buffer_info[1],
@@ -1410,6 +1524,7 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 	struct cpp_device *cpp_dev = v4l2_get_subdevdata(sd);
 	struct msm_camera_v4l2_ioctl_t *ioctl_ptr = arg;
 	int rc = 0;
+	int x = 0;
 
 	if (ioctl_ptr == NULL) {
 		pr_err("ioctl_ptr is null\n");
@@ -1491,7 +1606,7 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 	case VIDIOC_MSM_CPP_ENQUEUE_STREAM_BUFF_INFO: {
 		struct msm_cpp_stream_buff_info_t *u_stream_buff_info;
 		struct msm_cpp_stream_buff_info_t k_stream_buff_info;
-		CPP_DBG("E cmd: VIDIOC_MSM_CPP_ENQUEUE_STREAM_BUFF_INFO\n");
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_ENQUEUE_STREAM_BUFF_INFO (size = %d) \n", ioctl_ptr->len);
 		if (sizeof(struct msm_cpp_stream_buff_info_t) !=
 			ioctl_ptr->len) {
 			pr_err("%s:%d: invalid length\n", __func__, __LINE__);
@@ -1525,6 +1640,7 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 		}
 		k_stream_buff_info.num_buffs = u_stream_buff_info->num_buffs;
 		k_stream_buff_info.identity = u_stream_buff_info->identity;
+		CPP_DBG("add_buff: num_buffs = %d, identity = 0x%08x \n", k_stream_buff_info.num_buffs, k_stream_buff_info.identity);
 
 		if (k_stream_buff_info.num_buffs > MSM_CAMERA_MAX_STREAM_BUF) {
 			pr_err("%s:%d: unexpected large num buff requested\n",
@@ -1556,9 +1672,20 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 			return -EINVAL;
 		}
 
+		for (x=0; x < k_stream_buff_info.num_buffs; x++) {
+			struct msm_cpp_buffer_info_t * buf = &k_stream_buff_info.buffer_info[x];
+			CPP_DBG("add_buff: k_stream_buff_info.buffer_info[%d]: \n", x);
+			CPP_DBG("    fd = 0x%x \n", buf->fd );
+			CPP_DBG("    index = 0x%x \n", buf->index );
+			CPP_DBG("    offset = 0x%x \n", buf->offset );
+			CPP_DBG("    native_buff = 0x%x \n", buf->native_buff );
+			CPP_DBG("    processed_divert = 0x%x \n", buf->processed_divert );
+			CPP_DBG("    identity = 0x%x \n", buf->identity );
+		}
 		rc = msm_cpp_add_buff_queue_entry(cpp_dev,
 			((k_stream_buff_info.identity >> 16) & 0xFFFF),
 			(k_stream_buff_info.identity & 0xFFFF));
+		CPP_DBG("add_buff: identity = 0x%08x (rc = %d) \n", k_stream_buff_info.identity, rc);
 		if (!rc)
 			rc = msm_cpp_enqueue_buff_info_list(cpp_dev,
 				&k_stream_buff_info);
@@ -1570,7 +1697,7 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 	case VIDIOC_MSM_CPP_DEQUEUE_STREAM_BUFF_INFO: {
 		uint32_t identity;
 		struct msm_cpp_buff_queue_info_t *buff_queue_info;
-		CPP_DBG("E cmd: VIDIOC_MSM_CPP_DEQUEUE_STREAM_BUFF_INFO\n");
+		CPP_DBG("E cmd: VIDIOC_MSM_CPP_DEQUEUE_STREAM_BUFF_INFO (size = %d) \n", ioctl_ptr->len);
 		if ((ioctl_ptr->len == 0) ||
 		    (ioctl_ptr->len > sizeof(uint32_t)))
 			return -EINVAL;
@@ -1584,10 +1711,11 @@ long msm_cpp_subdev_ioctl(struct v4l2_subdev *sd,
 			return -EINVAL;
 		}
 
+		CPP_DBG("get_buff: identity = 0x%08x \n", identity);
 		buff_queue_info = msm_cpp_get_buff_queue_entry(cpp_dev,
 			((identity >> 16) & 0xFFFF), (identity & 0xFFFF));
 		if (buff_queue_info == NULL) {
-			pr_err("error finding buffer queue entry for identity:%d\n",
+			pr_err("===> ERROR: finding buffer queue entry for identity: 0x%08x\n",
 				identity);
 			mutex_unlock(&cpp_dev->mutex);
 			return -EINVAL;

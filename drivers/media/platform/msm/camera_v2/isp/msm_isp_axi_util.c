@@ -211,7 +211,7 @@ static uint32_t msm_isp_axi_get_plane_size(
 				plane_cfg[plane_idx].output_width;
 		else
 			size = plane_cfg[plane_idx].output_height *
-				plane_cfg[plane_idx].output_width;
+				plane_cfg[plane_idx].output_width / 2;
 		break;
 	case V4L2_PIX_FMT_NV14:
 	case V4L2_PIX_FMT_NV41:
@@ -220,7 +220,7 @@ static uint32_t msm_isp_axi_get_plane_size(
 				plane_cfg[plane_idx].output_width;
 		else
 			size = plane_cfg[plane_idx].output_height *
-				plane_cfg[plane_idx].output_width;
+				plane_cfg[plane_idx].output_width / 8;
 		break;
 	case V4L2_PIX_FMT_NV16:
 	case V4L2_PIX_FMT_NV61:
@@ -326,8 +326,7 @@ int msm_isp_axi_check_stream_state(
 				stream_info->state == PAUSED ||
 				stream_info->state == RESUME_PENDING ||
 				stream_info->state == RESUMING) &&
-				(stream_cfg_cmd->cmd == STOP_STREAM ||
-				stream_cfg_cmd->cmd == STOP_IMMEDIATELY)) {
+				stream_cfg_cmd->cmd == STOP_STREAM) {
 				stream_info->state = ACTIVE;
 			} else {
 				pr_err("%s: Invalid stream state: %d\n",
@@ -1212,7 +1211,7 @@ static int msm_isp_start_axi_stream(struct vfe_device *vfe_dev,
 		vfe_dev->hw_info->vfe_ops.core_ops.
 			update_camif_state(vfe_dev, camif_update);
 	}
-
+// NEW block
 	if (vfe_dev->axi_data.src_info[VFE_RAW_0].raw_stream_count > 0) {
 		vfe_dev->axi_data.src_info[VFE_RAW_0].frame_id = 0;
 	}
@@ -1222,7 +1221,7 @@ static int msm_isp_start_axi_stream(struct vfe_device *vfe_dev,
 	else if (vfe_dev->axi_data.src_info[VFE_RAW_2].raw_stream_count > 0) {
 		vfe_dev->axi_data.src_info[VFE_RAW_2].frame_id = 0;
 	}
-
+// end block
 	if (wait_for_complete)
 		rc = msm_isp_axi_wait_for_cfg_done(vfe_dev, camif_update);
 
